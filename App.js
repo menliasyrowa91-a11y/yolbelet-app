@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Alert, Share, ActivityIndicator, ScrollView } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Alert, Share, ActivityIndicator, ScrollView, StatusBar } from 'react-native';
 import * as Location from 'expo-location';
 import * as SMS from 'expo-sms';
 
@@ -28,17 +28,16 @@ export default function App() {
 
       const { latitude, longitude } = location.coords;
       
-      // DIŇE ŞU ÝERDE $ BELGISI GOŞULDY (Build öçmezligi üçin):
+      // 3. Google Maps Linkini döretmek (DOGRY FORMAT)
       const mapUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
-      const messageBody = "ÝOLBELET: Meniň häzirki ýerim: " + mapUrl;
+      const messageBody = `ÝOLBELET: Meniň häzirki ýerim: ${mapUrl}`;
 
-      // 3. SMS Ugratmak sahypasyny açmak
+      // 4. SMS ýa-da Share arkaly ugratmak
       const isAvailable = await SMS.isAvailableAsync();
       if (isAvailable) {
         await SMS.sendSMSAsync([], messageBody);
         setStatus("SMS taýýarlandy");
       } else {
-        // SMS bolmasa Share (paýlaşmak) ulanmak
         await Share.share({ message: messageBody });
         setStatus("Paýlaşyldy");
       }
@@ -51,105 +50,126 @@ export default function App() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      {/* Başlyk we Logo */}
-      <View style={styles.header}>
-        <Text style={styles.logoText}>📍 ÝOLBELET</Text>
-        <Text style={styles.subTitle}>Seniň ynamdar kömekçiň</Text>
-      </View>
+    <View style={{ flex: 1 }}>
+      <StatusBar barStyle="light-content" />
+      <ScrollView contentContainerStyle={styles.container}>
+        
+        <View style={styles.header}>
+          <Text style={styles.logoText}>📍 ÝOLBELET</Text>
+          <View style={styles.line} />
+          <Text style={styles.subTitle}>Seniň ynamdar kömekçiň</Text>
+        </View>
 
-      {/* Programma Barada Bölümi */}
-      <View style={styles.aboutCard}>
-        <Text style={styles.aboutHeader}>Programma barada:</Text>
-        <Text style={styles.aboutText}>
-          Salam! Men <Text style={{fontWeight: 'bold', color: '#e63946'}}>Meňli Aşyrowa Altyýewna</Text>. 
-          Bu programmany ýolda kynçylyga uçranlara ýa-da adresi tapyp bilmeýänlere 
-          çalt kömek bermek üçin döretdim.
-        </Text>
-        <Text style={styles.instructionText}>
-          Aşakdaky düwmä basyp, GPS koordinatanyzy SMS arkaly dostlaryňyza ugradyp bilersiňiz.
-        </Text>
-      </View>
+        <View style={styles.card}>
+          <Text style={styles.aboutHeader}>Programma Barada</Text>
+          <Text style={styles.aboutText}>
+            Salam! Men <Text style={styles.highlightText}>Meňli Aşyrowa Altyýewna</Text>. 
+            Bu programma ýolda kynçylyga uçranlara we adresi tapyp bilmeýänlere çalt kömek bermek üçin döredildi.
+          </Text>
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>Bitarap Türkmenistan 🇹🇲</Text>
+          </View>
+        </View>
 
-      {/* Esasy Düwme */}
-      <View style={styles.actionSection}>
-        {loading ? (
-          <ActivityIndicator size="large" color="#e63946" />
-        ) : (
-          <TouchableOpacity style={styles.button} onPress={shareLocation}>
-            <Text style={styles.buttonText}>📍 ÝERIMI UGRAT</Text>
-          </TouchableOpacity>
-        )}
-        <Text style={styles.statusText}>{status}</Text>
-      </View>
+        <View style={styles.actionSection}>
+          {loading ? (
+            <ActivityIndicator size="large" color="#f1faee" />
+          ) : (
+            <TouchableOpacity 
+              activeOpacity={0.8} 
+              style={styles.button} 
+              onPress={shareLocation}>
+              <Text style={styles.buttonText}>📍 ÝERIMI UGRAT</Text>
+            </TouchableOpacity>
+          )}
+          <Text style={styles.statusText}>{status}</Text>
+        </View>
 
-      {/* Footer */}
-      <Text style={styles.footerText}>© 2026 Ýolbelet - Düzüji: Mengli</Text>
-    </ScrollView>
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>© 2026 Ýolbelet | Düzüji: Mengli</Text>
+        </View>
+
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#1d3557', 
     alignItems: 'center',
-    paddingVertical: 50,
-    paddingHorizontal: 20,
+    paddingVertical: 60,
+    paddingHorizontal: 25,
   },
   header: {
-    marginBottom: 30,
+    marginBottom: 40,
     alignItems: 'center',
   },
   logoText: {
-    fontSize: 36,
+    fontSize: 40,
     fontWeight: '900',
-    color: '#1d3557',
+    color: '#f1faee',
+    letterSpacing: 1,
+  },
+  line: {
+    height: 4,
+    width: 50,
+    backgroundColor: '#e63946',
+    marginVertical: 10,
+    borderRadius: 2,
   },
   subTitle: {
     fontSize: 16,
-    color: '#457b9d',
-    marginTop: 5,
+    color: '#a8dadc',
   },
-  aboutCard: {
-    backgroundColor: '#ffffff',
+  card: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)', 
     padding: 20,
     borderRadius: 15,
     width: '100%',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    marginBottom: 40,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    marginBottom: 30,
   },
   aboutHeader: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#1d3557',
+    color: '#e63946',
     marginBottom: 10,
   },
   aboutText: {
     fontSize: 15,
-    color: '#333',
-    lineHeight: 22,
+    color: '#f1faee',
+    lineHeight: 24,
   },
-  instructionText: {
-    fontSize: 13,
-    color: '#666',
+  highlightText: {
+    fontWeight: 'bold',
+    color: '#f1faee',
+    textDecorationLine: 'underline',
+  },
+  badge: {
+    backgroundColor: '#457b9d',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 5,
     marginTop: 15,
-    fontStyle: 'italic',
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: 'bold',
   },
   actionSection: {
     width: '100%',
     alignItems: 'center',
   },
   button: {
-    backgroundColor: '#e63946',
+    backgroundColor: '#e63946', 
     paddingVertical: 20,
-    paddingHorizontal: 40,
-    borderRadius: 50,
-    width: '90%',
+    width: '100%',
+    borderRadius: 15,
     alignItems: 'center',
     elevation: 5,
   },
@@ -157,16 +177,18 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 20,
     fontWeight: 'bold',
-    letterSpacing: 1,
   },
   statusText: {
     marginTop: 15,
-    color: '#457b9d',
+    color: '#a8dadc',
     fontSize: 14,
   },
-  footerText: {
+  footer: {
     marginTop: 'auto',
-    color: '#a8dadc',
+    paddingTop: 30,
+  },
+  footerText: {
+    color: '#457b9d',
     fontSize: 12,
   },
 });
