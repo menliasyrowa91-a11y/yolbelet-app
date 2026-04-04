@@ -31,7 +31,7 @@ export default function App() {
       
       // Iň "howpsuz" we gysga link görnüşi (https we www aýryldy)
       const mapUrl = `maps.google.com/?q=${latitude},${longitude}`;
-      const messageBody = `YOLBELET: Men azasdym! Yerim: ${mapUrl}`;
+      const messageBody = "YOLBELET: Yerlesyan Yerim: " + mapUrl;
 
       // 3. SMS hyzmaty
       const isAvailable = await SMS.isAvailableAsync();
