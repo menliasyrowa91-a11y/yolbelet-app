@@ -7,22 +7,21 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.mengli.yolbeletv4"
+      "package": "com.mengli.yolbeletapp"
     },
     "extra": {
       "eas": {
-        "projectId": "87c536f9-7f32-474c-8131-0943632f1463"
+        "projectId": "6801fb20-7da6-4e60-ba07-3741d7c34738"
       }
     }
   }
 }
-
