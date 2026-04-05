@@ -28,20 +28,23 @@ export default function App() {
 
       const { latitude, longitude } = location.coords;
       
-      // 3. Google Maps Linkini döretmek (DOGRY FORMAT)
+      // 3. Google Maps Linkini döretmek (DÜZEDILDI)
       const mapUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
       const messageBody = `ÝOLBELET: Meniň häzirki ýerim: ${mapUrl}`;
 
-      // 4. SMS ýa-da Share arkaly ugratmak
+      // 4. SMS ugratmak (DÜZEDILDI)
       const isAvailable = await SMS.isAvailableAsync();
       if (isAvailable) {
-        await SMS.sendSMSAsync([], messageBody);
+        // BU ÝERDE NOMERI ÝAZYŇ (Mysal: +99365123456)
+        // Eger köp nomer bolsa: ['+99365...', '+99361...']
+        await SMS.sendSMSAsync(['+99365123456'], messageBody); 
         setStatus("SMS taýýarlandy");
       } else {
         await Share.share({ message: messageBody });
         setStatus("Paýlaşyldy");
       }
     } catch (error) {
+      console.log(error);
       Alert.alert("Ýalňyşlyk", "GPS maglumatyny alyp bolmady.");
       setStatus("Näsazlyk ýüze çykdy");
     } finally {
@@ -49,6 +52,7 @@ export default function App() {
     }
   };
 
+  // ... (Galan UI kodlaryňyz üýtgemedi, şol duruberýär)
   return (
     <View style={{ flex: 1 }}>
       <StatusBar barStyle="light-content" />
