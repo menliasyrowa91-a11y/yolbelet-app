@@ -30,7 +30,7 @@ export default function App() {
       
       // 3. DOGRY FORMAT (Seniň tapan formatyň)
       const mapUrl = `Maps.google.com/?q=${latitude},${longitude}`;
-      const messageBody = `ÝOLBELET: Meniň häzirki ýerim: ${mapUrl}`;
+      const messageBody = `YOLBELET: Menin yerim: ${mapUrl}`;
 
       // 4. SMS ugratmak
       const isAvailable = await SMS.isAvailableAsync();
