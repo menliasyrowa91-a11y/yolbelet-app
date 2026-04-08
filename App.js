@@ -146,7 +146,7 @@ export default function App() {
         <Text style={styles.statusText}>{status}</Text>
       </View>
 
-      <Text style={styles.footerText}>© 2026 Ýolbelet - Düzüji: Mengli</Text>
+      <Text style={styles.footerText}>© 2026 Ýolbelet - Düzüji: Meňli</Text>
     </ScrollView>
   );
 }
