@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Alert, ActivityIndicator, ScrollView, Dimensions, Platform, Share } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Alert, Share, ActivityIndicator, ScrollView, Dimensions, Platform } from 'react-native';
 import * as Location from 'expo-location';
 import * as SMS from 'expo-sms';
 import MapView, { Polyline, Marker, PROVIDER_GOOGLE } from 'react-native-maps';
@@ -9,28 +9,25 @@ export default function App() {
   const [status, setStatus] = useState("Ulanmaga taýýar");
   const [loading, setLoading] = useState(false);
   const [location, setLocation] = useState(null);
-  const [routeCoordinates, setRouteCoordinates] = useState([]); // Gök çyzyk (Breadcrumbs)
-  const [savedPoint, setSavedPoint] = useState(null); // Doňdurylan nokat
+  const [routeCoordinates, setRouteCoordinates] = useState([]); 
+  const [savedPoint, setSavedPoint] = useState(null); 
   const mapRef = useRef(null);
 
   useEffect(() => {
     (async () => {
-      // 1. Rugsatlary almak
       let { status: permissionStatus } = await Location.requestForegroundPermissionsAsync();
       if (permissionStatus !== 'granted') {
         setStatus("Rugsat ýok");
         return;
       }
 
-      // 2. Öň saklanan nokady okamak (Offline üçin)
       const storedPoint = await AsyncStorage.getItem('saved_point');
       if (storedPoint) setSavedPoint(JSON.parse(storedPoint));
 
-      // 3. Janly yzarlamak (Gök çyzyk çyzmak üçin)
       Location.watchPositionAsync(
         {
           accuracy: Location.Accuracy.High,
-          distanceInterval: 10, // Her 10 metrden täze nokat
+          distanceInterval: 10,
         },
         (newLocation) => {
           const { latitude, longitude } = newLocation.coords;
@@ -42,7 +39,6 @@ export default function App() {
     })();
   }, []);
 
-  // ✉️ SENIŇ ÖŇKI SMS FUNKSIÝAŇ (Hiç zat kemeltmedim)
   const shareLocation = async () => {
     if (!location) {
       Alert.alert("Garaşyň", "GPS entek anyklanmady.");
@@ -53,6 +49,7 @@ export default function App() {
 
     try {
       const { latitude, longitude } = location;
+      // 🔗 SENIŇ ÖŇKI WE GOWY IŞLEÝÄN LINKIŇ (HIIÇ ÜÝTGETMEDIM):
       const mapUrl = `Maps.google.com/?q=${latitude},${longitude}`;
       const messageBody = "YOLBELET: Menin yerim: " + mapUrl;
 
@@ -72,7 +69,6 @@ export default function App() {
     }
   };
 
-  // 📍 TÄZE: NOKADY DOŇDURMAK
   const freezeLocation = async () => {
     if (location) {
       await AsyncStorage.setItem('saved_point', JSON.stringify(location));
@@ -88,7 +84,6 @@ export default function App() {
         <Text style={styles.subTitle}>Seniň ynamdar kömekçiň</Text>
       </View>
 
-      {/* 🗺️ TÄZE: KARTA BÖLÜMI */}
       <View style={styles.mapCard}>
         <MapView
           ref={mapRef}
@@ -102,15 +97,10 @@ export default function App() {
             longitudeDelta: 0.05,
           }}
         >
-          {/* Gelen ýolumyz (Gök çyzyk) */}
           <Polyline coordinates={routeCoordinates} strokeColor="#1d3557" strokeWidth={4} />
-
-          {/* Doňdurylan nokat (Gyzyl Marker) */}
           {savedPoint && (
             <Marker coordinate={savedPoint} pinColor="#e63946" title="Doňdurylan Nokat" />
           )}
-
-          {/* Howpsuzlyk ugrumyz (Sary çyzyk) */}
           {savedPoint && location && (
             <Polyline 
               coordinates={[location, savedPoint]} 
@@ -131,7 +121,6 @@ export default function App() {
       </View>
 
       <View style={styles.actionSection}>
-        {/* 📍 TÄZE DÜWME: DOŇDURMAK */}
         <TouchableOpacity style={[styles.button, {backgroundColor: '#1d3557', marginBottom: 10}]} onPress={freezeLocation}>
           <Text style={styles.buttonText}>📍 NOKADY DOŇDUR</Text>
         </TouchableOpacity>
