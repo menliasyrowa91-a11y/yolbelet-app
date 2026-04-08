@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Alert, Share, ActivityIndicator, ScrollView, Image, Dimensions, Platform } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Alert, Share, ActivityIndicator, ScrollView, Image } from 'react-native';
 import * as Location from 'expo-location';
 import * as SMS from 'expo-sms';
 import MapView, { Polyline, Marker, PROVIDER_GOOGLE } from 'react-native-maps';
@@ -49,6 +49,8 @@ export default function App() {
 
     try {
       const { latitude, longitude } = location;
+      
+      // SENIŇ DEGMELI DÄL DIYEN LINKIŇ (Üýtgedilmedi):
       const mapUrl = `https://maps.google.com/?q=${latitude},${longitude}`;
       const messageBody = "YOLBELET: Menin yerim: " + mapUrl;
 
@@ -79,7 +81,6 @@ export default function App() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.header}>
-        {/* IKONYŇ DOGRY PATH-Y ŞU ÝERDE GOÝULDY */}
         <Image 
           source={require('./assets/icon.png')} 
           style={styles.mainIcon} 
@@ -126,7 +127,7 @@ export default function App() {
       </View>
 
       <View style={styles.actionSection}>
-        <TouchableOpacity style={[styles.button, {backgroundColor: '#1d3557', marginBottom: 10}]} onPress={freezeLocation}>
+        <TouchableOpacity style={[styles.button, {backgroundColor: '#1d3557', marginBottom: 12}]} onPress={freezeLocation}>
           <Text style={styles.buttonText}>📍 NOKADY DOŇDUR</Text>
         </TouchableOpacity>
 
@@ -140,7 +141,7 @@ export default function App() {
         <Text style={styles.statusText}>{status}</Text>
       </View>
 
-      <Text style={styles.footerText}>© 2026 Ýolbelet - Düzüji: Meňli</Text>
+      <Text style={styles.footerText}>© 2026 Ýolbelet — Düzüji: Meňli Aşyrowa</Text>
     </ScrollView>
   );
 }
@@ -148,17 +149,17 @@ export default function App() {
 const styles = StyleSheet.create({
   container: { flexGrow: 1, backgroundColor: '#f8f9fa', paddingVertical: 40, paddingHorizontal: 20 },
   header: { marginBottom: 20, alignItems: 'center' },
-  mainIcon: { width: 80, height: 80, marginBottom: 10 }, // Ikonanyň ölçegi sazlandy
+  mainIcon: { width: 80, height: 80, marginBottom: 10 },
   logoText: { fontSize: 32, fontWeight: '900', color: '#1d3557' },
   subTitle: { fontSize: 14, color: '#457b9d' },
-  mapCard: { height: 300, width: '100%', borderRadius: 20, overflow: 'hidden', marginBottom: 20, elevation: 4 },
+  mapCard: { height: 320, width: '100%', borderRadius: 25, overflow: 'hidden', marginBottom: 20, elevation: 5 },
   map: { flex: 1 },
-  aboutCard: { backgroundColor: '#ffffff', padding: 20, borderRadius: 15, width: '100%', elevation: 3, marginBottom: 20 },
+  aboutCard: { backgroundColor: '#ffffff', padding: 20, borderRadius: 20, width: '100%', elevation: 3, marginBottom: 20 },
   aboutHeader: { fontSize: 16, fontWeight: 'bold', color: '#1d3557', marginBottom: 5 },
-  aboutText: { fontSize: 14, color: '#333', lineHeight: 20 },
+  aboutText: { fontSize: 14, color: '#333', lineHeight: 22 },
   actionSection: { width: '100%', alignItems: 'center' },
-  button: { backgroundColor: '#e63946', paddingVertical: 18, borderRadius: 50, width: '90%', alignItems: 'center', elevation: 5 },
-  buttonText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
-  statusText: { marginTop: 10, color: '#457b9d', fontSize: 13 },
-  footerText: { marginTop: 20, color: '#a8dadc', fontSize: 11, textAlign: 'center' },
+  button: { backgroundColor: '#e63946', paddingVertical: 18, borderRadius: 15, width: '100%', alignItems: 'center', elevation: 4 },
+  buttonText: { color: '#fff', fontSize: 17, fontWeight: 'bold' },
+  statusText: { marginTop: 10, color: '#457b9d', fontSize: 13, fontWeight: '500' },
+  footerText: { marginTop: 30, color: '#adb5bd', fontSize: 11, textAlign: 'center' },
 });
