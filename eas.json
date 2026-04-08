@@ -9,8 +9,7 @@
     "production": {
       "android": {
         "buildType": "apk"
-      },
-      "submit": false
+      }
     }
   }
 }
