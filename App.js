@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Alert, Share, ActivityIndicator, ScrollView, Dimensions, Platform } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Alert, Share, ActivityIndicator, ScrollView, Image, Dimensions, Platform } from 'react-native';
 import * as Location from 'expo-location';
 import * as SMS from 'expo-sms';
 import MapView, { Polyline, Marker, PROVIDER_GOOGLE } from 'react-native-maps';
@@ -49,8 +49,7 @@ export default function App() {
 
     try {
       const { latitude, longitude } = location;
-      // 🔗 SENIŇ ÖŇKI WE GOWY IŞLEÝÄN LINKIŇ (HIIÇ ÜÝTGETMEDIM):
-      const mapUrl = `Maps.google.com/?q=${latitude},${longitude}`;
+      const mapUrl = `https://maps.google.com/?q=${latitude},${longitude}`;
       const messageBody = "YOLBELET: Menin yerim: " + mapUrl;
 
       const isAvailable = await SMS.isAvailableAsync();
@@ -80,6 +79,12 @@ export default function App() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.header}>
+        {/* IKONYŇ DOGRY PATH-Y ŞU ÝERDE GOÝULDY */}
+        <Image 
+          source={require('./assets/icon.png')} 
+          style={styles.mainIcon} 
+          resizeMode="contain"
+        />
         <Text style={styles.logoText}>📍 ÝOLBELET</Text>
         <Text style={styles.subTitle}>Seniň ynamdar kömekçiň</Text>
       </View>
@@ -143,6 +148,7 @@ export default function App() {
 const styles = StyleSheet.create({
   container: { flexGrow: 1, backgroundColor: '#f8f9fa', paddingVertical: 40, paddingHorizontal: 20 },
   header: { marginBottom: 20, alignItems: 'center' },
+  mainIcon: { width: 80, height: 80, marginBottom: 10 }, // Ikonanyň ölçegi sazlandy
   logoText: { fontSize: 32, fontWeight: '900', color: '#1d3557' },
   subTitle: { fontSize: 14, color: '#457b9d' },
   mapCard: { height: 300, width: '100%', borderRadius: 20, overflow: 'hidden', marginBottom: 20, elevation: 4 },
