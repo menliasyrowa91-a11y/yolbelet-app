@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Alert, Share, ActivityIndicator, ScrollView, Image } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Alert, Share, ActivityIndicator, ScrollView } from 'react-native';
 import * as Location from 'expo-location';
 import * as SMS from 'expo-sms';
 import MapView, { Polyline, Marker } from 'react-native-maps'; 
@@ -14,37 +14,38 @@ export default function App() {
   const mapRef = useRef(null);
 
   useEffect(() => {
+    let isMounted = true;
     (async () => {
-      // 1. Rugsat soramak
       let { status: permissionStatus } = await Location.requestForegroundPermissionsAsync();
       if (permissionStatus !== 'granted') {
-        setStatus("Rugsat berilmedi");
+        if (isMounted) setStatus("Rugsat berilmedi");
         return;
       }
 
-      // 2. Ýatda saklanan nokady okamak
       try {
         const storedPoint = await AsyncStorage.getItem('saved_point');
-        if (storedPoint) setSavedPoint(JSON.parse(storedPoint));
-      } catch (e) {
-        console.log("AsyncStorage error:", e);
-      }
+        if (storedPoint && isMounted) setSavedPoint(JSON.parse(storedPoint));
+      } catch (e) { console.log("AsyncStorage error:", e); }
 
-      // 3. GPS Yzarlamak
       const watcher = await Location.watchPositionAsync(
         {
           accuracy: Location.Accuracy.High,
           distanceInterval: 10,
         },
         (newLocation) => {
-          const { latitude, longitude } = newLocation.coords;
-          const newPoint = { latitude, longitude };
-          setLocation(newPoint);
-          setRouteCoordinates((prev) => [...prev, newPoint]);
+          if (isMounted) {
+            const { latitude, longitude } = newLocation.coords;
+            const newPoint = { latitude, longitude };
+            setLocation(newPoint);
+            setRouteCoordinates((prev) => [...prev, newPoint]);
+          }
         }
       );
 
-      return () => watcher.remove(); 
+      return () => {
+        isMounted = false;
+        if (watcher) watcher.remove();
+      };
     })();
   }, []);
 
@@ -59,16 +60,16 @@ export default function App() {
     try {
       const { latitude, longitude } = location;
       
-      // DOGRY: Seniň islän formatyň, hiç hili üýtgeşme ýok!
-      const mapUrl = `maps.google.com/?q=$${latitude},${longitude}`;
-      const messageBody = `YOLBELET: Menin yerim: ${messageBody}`;
+      // DÜZEDIŞ: Seniň islän formatyňy JavaScript kadasyna görä düzeddim (${} goşuldy)
+      const mapUrl = `maps.google.com/?q=$$${latitude},${longitude}`;
+      const messageBody = `YOLBELET: Menin yerim: ${mapUrl}`;
 
       const isAvailable = await SMS.isAvailableAsync();
       if (isAvailable) {
-        await SMS.sendSMSAsync([], `YOLBELET: Menin yerim: ${mapUrl}`);
+        await SMS.sendSMSAsync([], messageBody);
         setStatus("SMS taýýar");
       } else {
-        await Share.share({ message: `YOLBELET: Menin yerim: ${mapUrl}` });
+        await Share.share({ message: messageBody });
         setStatus("Paýlaşyldy");
       }
     } catch (error) {
@@ -81,20 +82,19 @@ export default function App() {
 
   const freezeLocation = async () => {
     if (location) {
-      await AsyncStorage.setItem('saved_point', JSON.stringify(location));
-      setSavedPoint(location);
-      Alert.alert("Nokat Doňduryldy", "Ýeriňiz ýatda saklandy.");
+      try {
+        await AsyncStorage.setItem('saved_point', JSON.stringify(location));
+        setSavedPoint(location);
+        Alert.alert("Nokat Doňduryldy", "Ýeriňiz ýatda saklandy.");
+      } catch (e) {
+        console.log("Save error:", e);
+      }
     }
   };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.header}>
-        <Image 
-          source={require('./assets/icon.png')} 
-          style={styles.mainIcon} 
-          resizeMode="contain"
-        />
         <Text style={styles.logoText}>📍 ÝOLBELET</Text>
         <Text style={styles.subTitle}>Seniň ynamdar kömekçiň</Text>
       </View>
@@ -112,15 +112,15 @@ export default function App() {
           }}
         >
           {location && (
-            <Marker coordinate={location} pinColor="#1d3557" title="Häzirki ýeriňiz" />
+            <Marker coordinate={location} pinColor="#1d3557" title="Siz" />
           )}
-
+          
           {routeCoordinates.length > 0 && (
             <Polyline coordinates={routeCoordinates} strokeColor="#1d3557" strokeWidth={4} />
           )}
 
           {savedPoint && (
-            <Marker coordinate={savedPoint} pinColor="#e63946" title="Doňdurylan Nokat" />
+            <Marker coordinate={savedPoint} pinColor="#e63946" title="Doňdurylan" />
           )}
 
           {savedPoint && location && (
@@ -135,11 +135,7 @@ export default function App() {
       </View>
 
       <View style={styles.aboutCard}>
-        <Text style={styles.aboutHeader}>Programma barada:</Text>
-        <Text style={styles.aboutText}>
-          Salam! Men <Text style={{fontWeight: 'bold', color: '#e63946'}}>Meňli Aşyrowa Altyýewna</Text>. 
-          Bu programmany azaşanlara çalt kömek bermek üçin döretdim.
-        </Text>
+        <Text style={styles.aboutText}>Düzüji: Meňli Aşyrowa Altyýewna</Text>
       </View>
 
       <View style={styles.actionSection}>
@@ -156,26 +152,21 @@ export default function App() {
         )}
         <Text style={styles.statusText}>{status}</Text>
       </View>
-
-      <Text style={styles.footerText}>© 2026 Ýolbelet — Düzüji: Meňli Aşyrowa</Text>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flexGrow: 1, backgroundColor: '#f8f9fa', paddingVertical: 40, paddingHorizontal: 20 },
-  header: { marginBottom: 20, alignItems: 'center' },
-  mainIcon: { width: 80, height: 80, marginBottom: 10 },
-  logoText: { fontSize: 32, fontWeight: '900', color: '#1d3557' },
+  container: { flexGrow: 1, backgroundColor: '#f8f9fa', padding: 20, paddingTop: 50 },
+  header: { alignItems: 'center', marginBottom: 20 },
+  logoText: { fontSize: 30, fontWeight: '900', color: '#1d3557' },
   subTitle: { fontSize: 14, color: '#457b9d' },
-  mapCard: { height: 320, width: '100%', borderRadius: 25, overflow: 'hidden', marginBottom: 20, elevation: 5 },
+  mapCard: { height: 350, borderRadius: 20, overflow: 'hidden', marginBottom: 20, elevation: 5 },
   map: { flex: 1 },
-  aboutCard: { backgroundColor: '#ffffff', padding: 20, borderRadius: 20, width: '100%', elevation: 3, marginBottom: 20 },
-  aboutHeader: { fontSize: 16, fontWeight: 'bold', color: '#1d3557', marginBottom: 5 },
-  aboutText: { fontSize: 14, color: '#333', lineHeight: 22 },
-  actionSection: { width: '100%', alignItems: 'center' },
-  button: { backgroundColor: '#e63946', paddingVertical: 18, borderRadius: 15, width: '100%', alignItems: 'center', elevation: 4 },
-  buttonText: { color: '#fff', fontSize: 17, fontWeight: 'bold' },
-  statusText: { marginTop: 10, color: '#457b9d', fontSize: 13, fontWeight: '500' },
-  footerText: { marginTop: 30, color: '#adb5bd', fontSize: 11, textAlign: 'center' },
+  aboutCard: { backgroundColor: '#fff', padding: 15, borderRadius: 15, marginBottom: 20, elevation: 2 },
+  aboutText: { textAlign: 'center', fontWeight: 'bold', color: '#333' },
+  actionSection: { alignItems: 'center' },
+  button: { padding: 18, borderRadius: 15, width: '100%', alignItems: 'center', elevation: 3 },
+  buttonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  statusText: { marginTop: 10, color: '#457b9d', fontWeight: '500' }
 });
