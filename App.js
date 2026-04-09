@@ -15,15 +15,18 @@ export default function App() {
 
   useEffect(() => {
     (async () => {
+      // Rugsat soramak
       let { status: permissionStatus } = await Location.requestForegroundPermissionsAsync();
       if (permissionStatus !== 'granted') {
         setStatus("Rugsat ýok");
         return;
       }
 
+      // Ýatda saklanan nokady alýarys
       const storedPoint = await AsyncStorage.getItem('saved_point');
       if (storedPoint) setSavedPoint(JSON.parse(storedPoint));
 
+      // GPS-i yzarlamak
       Location.watchPositionAsync(
         {
           accuracy: Location.Accuracy.High,
@@ -50,9 +53,9 @@ export default function App() {
     try {
       const { latitude, longitude } = location;
       
-      // Link formaty dogry görnüşde düzetdim ($ belgisi goşuldy)
-      const mapUrl = `http://maps.google.com/?q=${latitude},${longitude}`;
-      const messageBody = "YOLBELET: Menin yerim: " + mapUrl;
+      // Siziň ulanýan we işledi diýen formatyňyz (Dollar belgisi goşuldy)
+      const mapUrl = `maps.google.com/?q=${latitude},${longitude}`;
+      const messageBody = `YOLBELET: Menin yerim: ${mapUrl}`;
 
       const isAvailable = await SMS.isAvailableAsync();
       if (isAvailable) {
@@ -81,6 +84,7 @@ export default function App() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.header}>
+        {/* Surat ýoly we rekwizitleri barlanyldy */}
         <Image 
           source={require('./assets/icon.png')} 
           style={styles.mainIcon} 
@@ -98,14 +102,21 @@ export default function App() {
           initialRegion={{
             latitude: 37.95,
             longitude: 58.38,
-            latitudeDelta: 0.05,
-            longitudeDelta: 0.05,
+            latitudeDelta: 0.1,
+            longitudeDelta: 0.1,
           }}
         >
-          <Polyline coordinates={routeCoordinates} strokeColor="#1d3557" strokeWidth={4} />
+          {/* GORAG: Diňe massiwde maglumat bolsa çyz */}
+          {routeCoordinates.length > 0 && (
+            <Polyline coordinates={routeCoordinates} strokeColor="#1d3557" strokeWidth={4} />
+          )}
+
+          {/* GORAG: Obýekt bar bolsa Marker goý */}
           {savedPoint && (
             <Marker coordinate={savedPoint} pinColor="#e63946" title="Doňdurylan Nokat" />
           )}
+
+          {/* GORAG: Iki nokat hem bar bolsa aralygy birleşdir */}
           {savedPoint && location && (
             <Polyline 
               coordinates={[location, savedPoint]} 
