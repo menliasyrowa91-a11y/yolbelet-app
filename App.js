@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Alert, Share, ActivityIndicator, ScrollView, Image } from 'react-native';
 import * as Location from 'expo-location';
 import * as SMS from 'expo-sms';
-import MapView, { Polyline, Marker } from 'react-native-maps'; // PROVIDER_GOOGLE aýryldy
+import MapView, { Polyline, Marker } from 'react-native-maps'; 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function App() {
@@ -50,8 +50,8 @@ export default function App() {
     try {
       const { latitude, longitude } = location;
       
-      // Link formaty düzedildi
-      const mapUrl = `http://maps.google.com/maps?q=${latitude},${longitude}`;
+      // Link formaty dogry görnüşde düzetdim ($ belgisi goşuldy)
+      const mapUrl = `http://maps.google.com/?q=${latitude},${longitude}`;
       const messageBody = "YOLBELET: Menin yerim: " + mapUrl;
 
       const isAvailable = await SMS.isAvailableAsync();
@@ -120,7 +120,7 @@ export default function App() {
       <View style={styles.aboutCard}>
         <Text style={styles.aboutHeader}>Programma barada:</Text>
         <Text style={styles.aboutText}>
-          Salam! Men <Text style={{fontWeight: 'bold', color: '#e63946'}}>Meñli Aşyrowa Altyýewna</Text>. 
+          Salam! Men <Text style={{fontWeight: 'bold', color: '#e63946'}}>Meňli Aşyrowa Altyýewna</Text>. 
           Bu programma azaşanlara çalt kömek bermek üçin döretdim.
         </Text>
       </View>
