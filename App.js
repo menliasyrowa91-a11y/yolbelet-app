@@ -50,8 +50,8 @@ export default function App() {
     try {
       const { latitude, longitude } = location;
       
-      // SENIŇ DEGMELI DÄL DIYEN LINKIŇ (Üýtgedilmedi):
-      const mapUrl = `https://maps.google.com/?q=${latitude},${longitude}`;
+      // Siziň talabyňyz: https we www ýok, diňe arassa link
+      const mapUrl = `maps.google.com/?q=${latitude},${longitude}`;
       const messageBody = "YOLBELET: Menin yerim: " + mapUrl;
 
       const isAvailable = await SMS.isAvailableAsync();
