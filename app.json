@@ -1,0 +1,38 @@
+{
+  "expo": {
+    "name": "yolbelet-app",
+    "slug": "yolbelet-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.menli.yolbeletapp",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Programma siziň ýerleşýän ýeriňizi karta görkezmek we paýlaşmak üçin GPS ulanmaly."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.menli.yolbeletapp",
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "FOREGROUND_SERVICE",
+        "SEND_SMS"
+      ]
+    },
+    "extra": {
+      "eas": {
+        "projectId": "100ca5d2-c063-494b-953c-cdc01ccd6c20"
+      }
+    },
+    "plugins": [
+      "expo-asset"
+    ]
+  }
+}
