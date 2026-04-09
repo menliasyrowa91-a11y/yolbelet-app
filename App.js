@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Alert, Share, ActivityIndicator, ScrollView, Image } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Alert, Share, ActivityIndicator, ScrollView, Image, Platform } from 'react-native';
 import * as Location from 'expo-location';
 import * as SMS from 'expo-sms';
 import MapView, { Polyline, Marker } from 'react-native-maps'; 
@@ -14,38 +14,42 @@ export default function App() {
   const mapRef = useRef(null);
 
   useEffect(() => {
-    (async () => {
-      // 1. Rugsat soramak
-      let { status: permissionStatus } = await Location.requestForegroundPermissionsAsync();
-      if (permissionStatus !== 'granted') {
-        setStatus("Rugsat berilmedi");
-        return;
-      }
+    let watcher = null;
 
-      // 2. Ýatda saklanan nokady okamak
+    (async () => {
       try {
+        // 1. Rugsat soramak
+        let { status: permissionStatus } = await Location.requestForegroundPermissionsAsync();
+        if (permissionStatus !== 'granted') {
+          setStatus("Rugsat berilmedi");
+          return;
+        }
+
+        // 2. Ýatda saklanan nokady okamak
         const storedPoint = await AsyncStorage.getItem('saved_point');
         if (storedPoint) setSavedPoint(JSON.parse(storedPoint));
-      } catch (e) {
-        console.log("AsyncStorage error:", e);
+
+        // 3. GPS Yzarlamak
+        watcher = await Location.watchPositionAsync(
+          {
+            accuracy: Location.Accuracy.High,
+            distanceInterval: 10,
+          },
+          (newLocation) => {
+            const { latitude, longitude } = newLocation.coords;
+            const newPoint = { latitude, longitude };
+            setLocation(newPoint);
+            setRouteCoordinates((prev) => [...prev, newPoint]);
+          }
+        );
+      } catch (error) {
+        console.log("GPS watcher error:", error);
       }
-
-      // 3. GPS Yzarlamak (watchPositionAsync)
-      const watcher = await Location.watchPositionAsync(
-        {
-          accuracy: Location.Accuracy.High,
-          distanceInterval: 10,
-        },
-        (newLocation) => {
-          const { latitude, longitude } = newLocation.coords;
-          const newPoint = { latitude, longitude };
-          setLocation(newPoint);
-          setRouteCoordinates((prev) => [...prev, newPoint]);
-        }
-      );
-
-      return () => watcher.remove(); // Komponent ýapylanda yzarlamany duruzmak
     })();
+
+    return () => {
+      if (watcher) watcher.remove();
+    };
   }, []);
 
   const shareLocation = async () => {
@@ -58,9 +62,8 @@ export default function App() {
 
     try {
       const { latitude, longitude } = location;
-      
-      // Siziň synap gören we işledi diýen formatyňyz (Dollar belgisi bilen)
-      const mapUrl = `maps.google.com/?q=$${latitude},${longitude}`;
+      // DÜZEDIŞ: JavaScript string interpolation formaty düzedildi
+      const mapUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
       const messageBody = `YOLBELET: Menin yerim: ${mapUrl}`;
 
       const isAvailable = await SMS.isAvailableAsync();
@@ -81,20 +84,23 @@ export default function App() {
 
   const freezeLocation = async () => {
     if (location) {
-      await AsyncStorage.setItem('saved_point', JSON.stringify(location));
-      setSavedPoint(location);
-      Alert.alert("Nokat Doňduryldy", "Ýeriňiz ýatda saklandy.");
+      try {
+        await AsyncStorage.setItem('saved_point', JSON.stringify(location));
+        setSavedPoint(location);
+        Alert.alert("Nokat Doňduryldy", "Ýeriňiz ýatda saklandy.");
+      } catch (e) {
+        Alert.alert("Ýalňyşlyk", "Saklap bolmady.");
+      }
     }
   };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.header}>
-        <Image 
-          source={require('./assets/icon.png')} 
-          style={styles.mainIcon} 
-          resizeMode="contain"
-        />
+        {/* SURAT GORAGY: Eger icon ýok bolsa crash bolmazlygy üçin try-catch ýa-da şert gerek */}
+        <View style={styles.iconContainer}>
+            <Text style={{fontSize: 40}}>📍</Text>
+        </View>
         <Text style={styles.logoText}>📍 ÝOLBELET</Text>
         <Text style={styles.subTitle}>Seniň ynamdar kömekçiň</Text>
       </View>
@@ -111,22 +117,18 @@ export default function App() {
             longitudeDelta: 0.1,
           }}
         >
-          {/* GORAG 1: Häzirki nokat üçin marker (diňe location bar bolsa) */}
           {location && (
             <Marker coordinate={location} pinColor="#1d3557" title="Häzirki ýeriňiz" />
           )}
 
-          {/* GORAG 2: Ýörilen ýol (diňe koordinatalar bar bolsa) */}
           {routeCoordinates.length > 0 && (
             <Polyline coordinates={routeCoordinates} strokeColor="#1d3557" strokeWidth={4} />
           )}
 
-          {/* GORAG 3: Ýatda saklanan nokat */}
           {savedPoint && (
             <Marker coordinate={savedPoint} pinColor="#e63946" title="Doňdurylan Nokat" />
           )}
 
-          {/* GORAG 4: Aralykdaky sary çyzyk */}
           {savedPoint && location && (
             <Polyline 
               coordinates={[location, savedPoint]} 
@@ -169,7 +171,7 @@ export default function App() {
 const styles = StyleSheet.create({
   container: { flexGrow: 1, backgroundColor: '#f8f9fa', paddingVertical: 40, paddingHorizontal: 20 },
   header: { marginBottom: 20, alignItems: 'center' },
-  mainIcon: { width: 80, height: 80, marginBottom: 10 },
+  iconContainer: { marginBottom: 10 },
   logoText: { fontSize: 32, fontWeight: '900', color: '#1d3557' },
   subTitle: { fontSize: 14, color: '#457b9d' },
   mapCard: { height: 320, width: '100%', borderRadius: 25, overflow: 'hidden', marginBottom: 20, elevation: 5 },
