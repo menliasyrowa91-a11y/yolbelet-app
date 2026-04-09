@@ -15,19 +15,23 @@ export default function App() {
 
   useEffect(() => {
     (async () => {
-      // Rugsat soramak
+      // 1. Rugsat soramak
       let { status: permissionStatus } = await Location.requestForegroundPermissionsAsync();
       if (permissionStatus !== 'granted') {
-        setStatus("Rugsat ýok");
+        setStatus("Rugsat berilmedi");
         return;
       }
 
-      // Ýatda saklanan nokady alýarys
-      const storedPoint = await AsyncStorage.getItem('saved_point');
-      if (storedPoint) setSavedPoint(JSON.parse(storedPoint));
+      // 2. Ýatda saklanan nokady okamak
+      try {
+        const storedPoint = await AsyncStorage.getItem('saved_point');
+        if (storedPoint) setSavedPoint(JSON.parse(storedPoint));
+      } catch (e) {
+        console.log("AsyncStorage error:", e);
+      }
 
-      // GPS-i yzarlamak
-      Location.watchPositionAsync(
+      // 3. GPS Yzarlamak (watchPositionAsync)
+      const watcher = await Location.watchPositionAsync(
         {
           accuracy: Location.Accuracy.High,
           distanceInterval: 10,
@@ -39,6 +43,8 @@ export default function App() {
           setRouteCoordinates((prev) => [...prev, newPoint]);
         }
       );
+
+      return () => watcher.remove(); // Komponent ýapylanda yzarlamany duruzmak
     })();
   }, []);
 
@@ -48,26 +54,26 @@ export default function App() {
       return;
     }
     setLoading(true);
-    setStatus("Ýerleşýän ýeriňiz anyklanýar...");
+    setStatus("Ugradylýar...");
 
     try {
       const { latitude, longitude } = location;
       
-      // Siziň ulanýan we işledi diýen formatyňyz (Dollar belgisi goşuldy)
-      const mapUrl = `maps.google.com/?q=${latitude},${longitude}`;
+      // Siziň synap gören we işledi diýen formatyňyz (Dollar belgisi bilen)
+      const mapUrl = `maps.google.com/?q=$${latitude},${longitude}`;
       const messageBody = `YOLBELET: Menin yerim: ${mapUrl}`;
 
       const isAvailable = await SMS.isAvailableAsync();
       if (isAvailable) {
         await SMS.sendSMSAsync([], messageBody);
-        setStatus("SMS taýýarlandy");
+        setStatus("SMS taýýar");
       } else {
         await Share.share({ message: messageBody });
         setStatus("Paýlaşyldy");
       }
     } catch (error) {
-      Alert.alert("Ýalňyşlyk", "Maglumat ugradyp bolmady.");
-      setStatus("Näsazlyk ýüze çykdy");
+      Alert.alert("Ýalňyşlyk", "Maglumat ugradylmady.");
+      setStatus("Näsazlyk");
     } finally {
       setLoading(false);
     }
@@ -77,14 +83,13 @@ export default function App() {
     if (location) {
       await AsyncStorage.setItem('saved_point', JSON.stringify(location));
       setSavedPoint(location);
-      Alert.alert("Nokat Doňduryldy", "Bu nokat ýatda saklandy.");
+      Alert.alert("Nokat Doňduryldy", "Ýeriňiz ýatda saklandy.");
     }
   };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.header}>
-        {/* Surat ýoly we rekwizitleri barlanyldy */}
         <Image 
           source={require('./assets/icon.png')} 
           style={styles.mainIcon} 
@@ -106,17 +111,22 @@ export default function App() {
             longitudeDelta: 0.1,
           }}
         >
-          {/* GORAG: Diňe massiwde maglumat bolsa çyz */}
+          {/* GORAG 1: Häzirki nokat üçin marker (diňe location bar bolsa) */}
+          {location && (
+            <Marker coordinate={location} pinColor="#1d3557" title="Häzirki ýeriňiz" />
+          )}
+
+          {/* GORAG 2: Ýörilen ýol (diňe koordinatalar bar bolsa) */}
           {routeCoordinates.length > 0 && (
             <Polyline coordinates={routeCoordinates} strokeColor="#1d3557" strokeWidth={4} />
           )}
 
-          {/* GORAG: Obýekt bar bolsa Marker goý */}
+          {/* GORAG 3: Ýatda saklanan nokat */}
           {savedPoint && (
             <Marker coordinate={savedPoint} pinColor="#e63946" title="Doňdurylan Nokat" />
           )}
 
-          {/* GORAG: Iki nokat hem bar bolsa aralygy birleşdir */}
+          {/* GORAG 4: Aralykdaky sary çyzyk */}
           {savedPoint && location && (
             <Polyline 
               coordinates={[location, savedPoint]} 
