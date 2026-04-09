@@ -1,4 +1,3 @@
-cat <<EOF > app.json
 {
   "expo": {
     "name": "yolbelet-app",
@@ -7,7 +6,7 @@ cat <<EOF > app.json
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.menli.yolbeletapp",
@@ -26,12 +25,7 @@ cat <<EOF > app.json
         "ACCESS_FINE_LOCATION",
         "FOREGROUND_SERVICE",
         "SEND_SMS"
-      ],
-      "config": {
-        "googleMaps": {
-          "apiKey": "" 
-        }
-      }
+      ]
     },
     "extra": {
       "eas": {
@@ -40,4 +34,3 @@ cat <<EOF > app.json
     }
   }
 }
-EOF
