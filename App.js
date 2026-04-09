@@ -60,9 +60,9 @@ export default function App() {
     try {
       const { latitude, longitude } = location;
       
-      // DÜZEDIŞ: Seniň islän formatyňy JavaScript kadasyna görä düzeddim (${} goşuldy)
-      const mapUrl = `maps.google.com/?q=$$${latitude},${longitude}`;
-      const messageBody = `YOLBELET: Menin yerim: ${mapUrl}`;
+      // DÜZEDIŞ: Iki üýtgeýjiniň hem öňünde $ belgisi goýuldy
+const mapUrl = `maps.google.com/?q=$$$${latitude},${longitude}`;
+const messageBody = `YOLBELET: Menin yerim: ${mapUrl}`;
 
       const isAvailable = await SMS.isAvailableAsync();
       if (isAvailable) {
