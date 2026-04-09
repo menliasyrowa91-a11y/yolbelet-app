@@ -1,46 +1,36 @@
 {
   "expo": {
-    "name": "Yolbelet",
+    "name": "Ýolbelet",
     "slug": "yolbelet-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "updates": {
-      "fallbackToCacheTimeout": 0,
-      "checkAutomatically": "ON_ERROR_RECOVERY"
-    },
     "splash": {
-      "image": "./assets/icon.png",
+      "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.mengli.yolbeletapp"
+      "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.mengli.yolbeletapp",
+      "package": "com.menli.yolbelet",
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
-        "FOREGROUND_SERVICE",
-        "SEND_SMS",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE"
-      ],
-      "config": {
-        "googleMaps": {
-          "apiKey": "" 
-        }
-      }
+        "SEND_SMS"
+      ]
     },
-    "extra": {
-      "eas": {}
+    "web": {
+      "favicon": "./assets/favicon.png"
     }
   }
 }
