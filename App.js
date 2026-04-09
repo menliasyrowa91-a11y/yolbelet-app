@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Alert, Share, ActivityIndicator, ScrollView, Image } from 'react-native';
 import * as Location from 'expo-location';
 import * as SMS from 'expo-sms';
-import MapView, { Polyline, Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { Polyline, Marker } from 'react-native-maps'; // PROVIDER_GOOGLE aýryldy
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function App() {
@@ -50,8 +50,8 @@ export default function App() {
     try {
       const { latitude, longitude } = location;
       
-      // Siziň talabyňyz: https we www ýok, diňe arassa link
-      const mapUrl = `maps.google.com/?q=${latitude},${longitude}`;
+      // Link formaty düzedildi
+      const mapUrl = `http://maps.google.com/maps?q=${latitude},${longitude}`;
       const messageBody = "YOLBELET: Menin yerim: " + mapUrl;
 
       const isAvailable = await SMS.isAvailableAsync();
@@ -63,7 +63,7 @@ export default function App() {
         setStatus("Paýlaşyldy");
       }
     } catch (error) {
-      Alert.alert("Ýalňyşlyk", "GPS maglumatyny alyp bolmady.");
+      Alert.alert("Ýalňyşlyk", "Maglumat ugradyp bolmady.");
       setStatus("Näsazlyk ýüze çykdy");
     } finally {
       setLoading(false);
@@ -74,7 +74,7 @@ export default function App() {
     if (location) {
       await AsyncStorage.setItem('saved_point', JSON.stringify(location));
       setSavedPoint(location);
-      Alert.alert("Nokat Doňduryldy", "Bu nokat ýatda saklandy we karta goşuldy.");
+      Alert.alert("Nokat Doňduryldy", "Bu nokat ýatda saklandy.");
     }
   };
 
@@ -94,7 +94,6 @@ export default function App() {
         <MapView
           ref={mapRef}
           style={styles.map}
-          provider={PROVIDER_GOOGLE}
           showsUserLocation={true}
           initialRegion={{
             latitude: 37.95,
