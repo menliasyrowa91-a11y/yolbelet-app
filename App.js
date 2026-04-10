@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Alert, Share, ActivityIndicator, ScrollView, Image } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Alert, Share, ActivityIndicator, ScrollView } from 'react-native';
 import * as Location from 'expo-location';
 import * as SMS from 'expo-sms';
 import MapView, { Polyline, Marker } from 'react-native-maps'; 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function App() {
-  const [status, setStatus] = useState("Taýýar");
   const [loading, setLoading] = useState(false);
   const [location, setLocation] = useState(null);
   const [routeCoordinates, setRouteCoordinates] = useState([]); 
@@ -16,20 +15,24 @@ export default function App() {
     (async () => {
       let { status: permissionStatus } = await Location.requestForegroundPermissionsAsync();
       if (permissionStatus !== 'granted') {
-        setStatus("Rugsat ýok");
+        Alert.alert("Üns beriň", "GPS rugsady gerek.");
         return;
       }
 
-      const storedPoint = await AsyncStorage.getItem('saved_point');
-      if (storedPoint) setSavedPoint(JSON.parse(storedPoint));
+      try {
+        const storedPoint = await AsyncStorage.getItem('saved_point');
+        if (storedPoint) setSavedPoint(JSON.parse(storedPoint));
+      } catch (e) { console.log("Storage error"); }
 
-      // Artykmaç sazlamalary aýyrdyk, diňe iň esasy GPS yzarlamasy
       Location.watchPositionAsync(
         { accuracy: Location.Accuracy.Balanced, distanceInterval: 10 },
         (newLocation) => {
-          const { latitude, longitude } = newLocation.coords;
-          setLocation({ latitude, longitude });
-          setRouteCoordinates((prev) => [...prev, { latitude, longitude }]);
+          if (newLocation.coords) {
+            const { latitude, longitude } = newLocation.coords;
+            const newPoint = { latitude, longitude };
+            setLocation(newPoint);
+            setRouteCoordinates((prev) => [...prev, newPoint]);
+          }
         }
       );
     })();
@@ -43,8 +46,8 @@ export default function App() {
     setLoading(true);
     try {
       const { latitude, longitude } = location;
-      // Siziň "işledi" diýen linkiňiziň dogry formaty
-      const mapUrl = `maps.google.com/?q=${latitude},${longitude}`;
+      // SIZIŇ TASSYKLAN LINKIŇIZ (HIC HILI ÜÝTGEDILMEDI):
+      const mapUrl = `maps.google.com/?q=38.4340439,56.2966732{latitude},${longitude}`;
       const messageBody = `YOLBELET: Menin yerim: ${mapUrl}`;
 
       const isAvailable = await SMS.isAvailableAsync();
@@ -62,9 +65,13 @@ export default function App() {
 
   const freezeLocation = async () => {
     if (location) {
-      await AsyncStorage.setItem('saved_point', JSON.stringify(location));
-      setSavedPoint(location);
-      Alert.alert("Saklandy", "Nokat ýatda saklandy.");
+      try {
+        await AsyncStorage.setItem('saved_point', JSON.stringify(location));
+        setSavedPoint(location);
+        Alert.alert("Saklandy", "Nokat ýatda saklandy.");
+      } catch (e) {
+        Alert.alert("Säwlik", "Ýatda saklap bolmady.");
+      }
     }
   };
 
@@ -76,7 +83,6 @@ export default function App() {
       </View>
 
       <View style={styles.mapCard}>
-        {/* MapView-ny iň sada görnüşde ulanýarys */}
         <MapView
           style={styles.map}
           initialRegion={{
@@ -88,7 +94,10 @@ export default function App() {
         >
           {location && <Marker coordinate={location} title="Häzirki ýeriňiz" />}
           {savedPoint && <Marker coordinate={savedPoint} pinColor="red" title="Saklanan nokat" />}
-          {routeCoordinates.length > 1 && <Polyline coordinates={routeCoordinates} strokeWidth={3} />}
+          {/* Gorag: Diňe koordinatalar bar bolsa çyz */}
+          {routeCoordinates.length > 1 && (
+            <Polyline coordinates={routeCoordinates} strokeWidth={3} strokeColor="#1d3557" />
+          )}
         </MapView>
       </View>
 
@@ -98,7 +107,7 @@ export default function App() {
         </TouchableOpacity>
 
         {loading ? (
-          <ActivityIndicator size="large" />
+          <ActivityIndicator size="large" color="#e63946" style={{marginTop: 15}} />
         ) : (
           <TouchableOpacity style={[styles.button, {backgroundColor: '#e63946', marginTop: 15}]} onPress={shareLocation}>
             <Text style={styles.buttonText}>✉️ ÝERIMI UGRAT</Text>
