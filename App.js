@@ -24,7 +24,11 @@ export default function App() {
 
       try {
         const storedPoint = await AsyncStorage.getItem('saved_point');
-        if (storedPoint && isMounted) setSavedPoint(JSON.parse(storedPoint));
+        // CRASH GORAGY: JSON parse edilmezden öň barlag
+        if (storedPoint && isMounted) {
+            const parsed = JSON.parse(storedPoint);
+            if(parsed && parsed.latitude) setSavedPoint(parsed);
+        }
       } catch (e) { console.log("AsyncStorage error:", e); }
 
       const watcher = await Location.watchPositionAsync(
@@ -60,9 +64,9 @@ export default function App() {
     try {
       const { latitude, longitude } = location;
       
-      // DÜZEDIŞ: Iki üýtgeýjiniň hem öňünde $ belgisi goýuldy
-const mapUrl = `maps.google.com/?q=$$$${latitude},${longitude}`;
-const messageBody = `YOLBELET: Menin yerim: ${mapUrl}`;
+     // Edil şu durşuna, hiç hili http ýa-da https goşman:
+const mapUrl = "maps.google.com/?q=" + latitude + "," + longitude;
+      const messageBody = `YOLBELET: Menin yerim: ${mapUrl}`;
 
       const isAvailable = await SMS.isAvailableAsync();
       if (isAvailable) {
@@ -115,7 +119,8 @@ const messageBody = `YOLBELET: Menin yerim: ${mapUrl}`;
             <Marker coordinate={location} pinColor="#1d3557" title="Siz" />
           )}
           
-          {routeCoordinates.length > 0 && (
+          {/* CRASH GORAGY: Sanaw boş bolsa çyzma! */}
+          {routeCoordinates.length > 1 && (
             <Polyline coordinates={routeCoordinates} strokeColor="#1d3557" strokeWidth={4} />
           )}
 
@@ -146,7 +151,7 @@ const messageBody = `YOLBELET: Menin yerim: ${mapUrl}`;
         {loading ? (
           <ActivityIndicator size="large" color="#e63946" />
         ) : (
-          <TouchableOpacity style={styles.button} onPress={shareLocation}>
+          <TouchableOpacity style={[styles.button, {backgroundColor: '#e63946'}]} onPress={shareLocation}>
             <Text style={styles.buttonText}>✉️ ÝERIMI UGRAT</Text>
           </TouchableOpacity>
         )}
