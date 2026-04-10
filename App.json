@@ -25,7 +25,12 @@
         "ACCESS_FINE_LOCATION",
         "FOREGROUND_SERVICE",
         "SEND_SMS"
-      ]
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": "" 
+        }
+      }
     },
     "extra": {
       "eas": {
