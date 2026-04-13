@@ -10,7 +10,8 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.menli.yolbeletapp",
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "Programma siziň ýerleşýän ýeriňizi karta görkezmek we paýlaşmak üçin GPS ulanmaly."
+        "NSLocationWhenInUseUsageDescription": "Programma siziň ýerleşýän ýeriňizi karta görkezmek we paýlaşmak üçin GPS ulanmaly.",
+        "NSLocationAlwaysUsageDescription": "Programma azaşmazlygyňyz üçin yzyňyzdaky ýoly hemişe yzarlamaly."
       }
     },
     "android": {
@@ -23,11 +24,23 @@
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
         "FOREGROUND_SERVICE",
+        "ACCESS_BACKGROUND_LOCATION",
         "SEND_SMS"
-      ]
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": "" 
+        }
+      }
     },
     "plugins": [
-      "expo-asset"
+      "expo-asset",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Ýolbelet siziň ýoluňyzy yzarlamak üçin hemişe GPS ulanmaly."
+        }
+      ]
     ],
     "owner": "mahrimenli"
   }
