@@ -1,119 +1,168 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Alert, SafeAreaView, ScrollView, Linking, Platform } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, Alert, Share, ActivityIndicator, ScrollView, Dimensions } from 'react-native';
 import * as Location from 'expo-location';
 import * as SMS from 'expo-sms';
+import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function App() {
   const [status, setStatus] = useState("Ulanmaga taýýar");
+  const [loading, setLoading] = useState(false);
+  const [currentLocation, setCurrentLocation] = useState(null);
+  const [savedPoint, setSavedPoint] = useState(null); // Doňdurlan nokat
+  const [routeCoordinates, setRouteCoordinates] = useState([]); // Gelen ýolumyz
+  const mapRef = useRef(null);
 
-  const openNavigation = async () => {
-    setStatus("GPS gözlenilýär...");
-    let { status: permissionStatus } = await Location.requestForegroundPermissionsAsync();
-    
-    if (permissionStatus !== 'granted') {
-      Alert.alert("GPS Rugsady", "Nawigasiýa üçin GPS rugsady gerek.");
-      setStatus("Rugsat berilmedi");
+  // Programma açylanda GPS-i yzarlap başlamak
+  useEffect(() => {
+    (async () => {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert("Rugsat", "Karta we GPS üçin rugsat gerek.");
+        return;
+      }
+
+      // 7-nji apreldäki kodyň esasy ýörelgesi: Ýoly yzarlamak (Tracking)
+      Location.watchPositionAsync(
+        {
+          accuracy: Location.Accuracy.High,
+          distanceInterval: 10, // Her 10 metrden ýoly ýatda sakla
+        },
+        (location) => {
+          const { latitude, longitude } = location.coords;
+          const newCoord = { latitude, longitude };
+          setCurrentLocation(newCoord);
+          setRouteCoordinates((prev) => [...prev, newCoord]); // Ýoly çyzmak üçin
+        }
+      );
+
+      // Öň ýatda saklanan nokat barmy? (Nokady doňdurylan)
+      const storedPoint = await AsyncStorage.getItem('saved_point');
+      if (storedPoint) setSavedPoint(JSON.parse(storedPoint));
+    })();
+  }, []);
+
+  // 1. NOKADY DOŇDUR (Save Point)
+  const freezePoint = async () => {
+    if (!currentLocation) {
+      Alert.alert("Garaşyň", "GPS heniz anyklanmady.");
       return;
     }
-
     try {
-      let loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
-      const { latitude, longitude } = loc.coords;
-      
-      const url = Platform.select({
-        ios: `maps:0,0?q=${latitude},${longitude}`,
-        android: `geo:0,0?q=${latitude},${longitude}`
-      });
-
-      const supported = await Linking.canOpenURL(url);
-      if (supported) {
-        await Linking.openURL(url);
-        setStatus("Karta açyldy");
-      } else {
-        await Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`);
-      }
-    } catch (error) {
-      Alert.alert("Ýalňyşlyk", "GPS maglumaty alynmady.");
-      setStatus("GPS tapylmady");
+      await AsyncStorage.setItem('saved_point', JSON.stringify(currentLocation));
+      setSavedPoint(currentLocation);
+      Alert.alert("Nokat Doňduryldy", "Siziň häzirki ýeriňiz ýatda saklandy.");
+    } catch (e) {
+      Alert.alert("Ýalňyşlyk", "Ýatda saklap bolmady.");
     }
   };
 
+  // 2. ÝERIMI UGRAT (Seniň öňki kodyň - degilmedi)
   const shareLocation = async () => {
-    setStatus("GPS gözlenilýär...");
-    let { status: permissionStatus } = await Location.requestForegroundPermissionsAsync();
-    
-    if (permissionStatus !== 'granted') {
-      Alert.alert("GPS Rugsady", "Ýeriňizi paýlaşmak üçin GPS rugsady gerek.");
-      return;
-    }
-
+    setLoading(true);
+    setStatus("Ýerleşýän ýeriňiz anyklanýar...");
     try {
-      let loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
-      const { latitude, longitude } = loc.coords;
-      
-      const mapUrl = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
-      const messageBody = `YOLBELET: Menin yerim: ${mapUrl}`;
+      let location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+      const { latitude, longitude } = location.coords;
+      const mapUrl = `Maps.google.com/?q=${latitude},${longitude}`;
+      const messageBody = "YOLBELET: Menin yerim: " + mapUrl;
 
       const isAvailable = await SMS.isAvailableAsync();
       if (isAvailable) {
         await SMS.sendSMSAsync([], messageBody);
-        setStatus("SMS ugradyldy");
+        setStatus("SMS taýýarlandy");
       } else {
-        Alert.alert("SMS", "SMS funksiýasy elýeterli däl.");
+        await Share.share({ message: messageBody });
+        setStatus("Paýlaşyldy");
       }
     } catch (error) {
-      Alert.alert("Ýalňyşlyk", "GPS maglumaty alynmady.");
+      Alert.alert("Ýalňyşlyk", "GPS maglumatyny alyp bolmady.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.card}>
-          <Text style={styles.logo}>📍 ÝOLBELET v2</Text>
-          <Text style={styles.subTitle}>Seniň ynamdar kömekçiň</Text>
-          
-          <View style={styles.aboutBox}>
-            <Text style={styles.aboutHeader}>Programma barada:</Text>
-            <Text style={styles.aboutText}>
-              Salam! Men <Text style={styles.authorName}>Meňli Aşyrowa Altyýewna</Text>. 
-              Bu programma köçesiz, daglyk we çöl ýerlerde hem ýoluňyzy tapmaga kömek eder.
-            </Text>
-          </View>
+    <View style={{ flex: 1 }}>
+      {/* KARTA BÖLÜMI */}
+      <MapView
+        ref={mapRef}
+        style={styles.map}
+        provider={PROVIDER_GOOGLE}
+        showsUserLocation={true}
+        followsUserLocation={true}
+        initialRegion={{
+          latitude: 37.96, // Türkmenistan merkezli başlar
+          longitude: 58.32,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        }}
+      >
+        {/* Gelen ýolumyz (Çyzyk) */}
+        <Polyline coordinates={routeCoordinates} strokeWidth={5} strokeColor="#e63946" />
+        
+        {/* Doňdurlan nokat (Belgi) */}
+        {savedPoint && (
+          <Marker coordinate={savedPoint} title="Doňdurlan Nokat" pinColor="blue" />
+        )}
+      </MapView>
 
-          <TouchableOpacity style={styles.btnNav} onPress={openNavigation}>
-            <Text style={styles.btnText}>🗺️ KARTADA ÝOLUMY GÖRKEZ</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.btnSms} onPress={shareLocation}>
-            <Text style={styles.btnText}>✉️ ÝERIMI SMS BILEN UGRAT</Text>
-          </TouchableOpacity>
-          
-          <Text style={styles.status}>{status}</Text>
+      <ScrollView contentContainerStyle={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.logoText}>📍 ÝOLBELET</Text>
+          <Text style={styles.statusText}>{status}</Text>
         </View>
 
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>© 2026 Ýolbelet - Meňli Aşyrowa</Text>
+        {/* IŞJEŇ DÜWMELER */}
+        <View style={styles.actionSection}>
+          <TouchableOpacity style={[styles.button, {backgroundColor: '#457b9d'}]} onPress={freezePoint}>
+            <Text style={styles.buttonText}>❄️ NOKADY DOŇDUR</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={[styles.button, {marginTop: 10}]} onPress={shareLocation}>
+            {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>📍 ÝERIMI UGRAT</Text>}
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={[styles.button, {backgroundColor: '#1d3557', marginTop: 10}]} 
+            onPress={() => mapRef.current?.animateToRegion(savedPoint || currentLocation)}
+          >
+            <Text style={styles.buttonText}>🔄 MENI YZMA DOLA</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.aboutCard}>
+          <Text style={styles.aboutText}>
+            Düzüji: <Text style={{fontWeight: 'bold'}}>Meñli Aşyrowa</Text>. 
+            Gelen ýoluňyz karta çyzylýar. Doňdurlan nokadyňyz gök reňk bilen görkezilýär.
+          </Text>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8f9fa' },
-  scrollContainer: { flexGrow: 1, justifyContent: 'center', padding: 20 },
-  card: { backgroundColor: '#fff', padding: 25, borderRadius: 25, alignItems: 'center', elevation: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10 },
-  logo: { fontSize: 36, fontWeight: '900', color: '#1d3557', marginBottom: 5 },
-  subTitle: { fontSize: 16, color: '#457b9d', marginBottom: 25 },
-  aboutBox: { backgroundColor: '#f1f3f5', padding: 15, borderRadius: 15, marginBottom: 25, width: '100%' },
-  aboutHeader: { fontSize: 18, fontWeight: 'bold', color: '#1d3557', marginBottom: 8 },
-  aboutText: { fontSize: 15, color: '#333', lineHeight: 22 },
-  authorName: { fontWeight: 'bold', color: '#e63946' },
-  btnNav: { backgroundColor: '#457b9d', padding: 20, borderRadius: 15, width: '100%', alignItems: 'center', marginTop: 10 },
-  btnSms: { backgroundColor: '#e63946', padding: 20, borderRadius: 15, width: '100%', alignItems: 'center', marginTop: 15 },
-  btnText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
-  status: { marginTop: 20, color: '#6c757d', fontSize: 14, fontWeight: '500' },
-  footer: { marginTop: 30, alignItems: 'center' },
-  footerText: { color: '#adb5bd', fontSize: 12 }
+  map: {
+    width: Dimensions.get('window').width,
+    height: Dimensions.get('window').height * 0.4, // Kartanyň ekrandaky ölçegi
+  },
+  container: {
+    padding: 20,
+    backgroundColor: '#f8f9fa',
+  },
+  header: { alignItems: 'center', marginBottom: 20 },
+  logoText: { fontSize: 28, fontWeight: '900', color: '#1d3557' },
+  statusText: { color: '#457b9d', fontSize: 14 },
+  actionSection: { width: '100%', marginBottom: 20 },
+  button: {
+    backgroundColor: '#e63946',
+    paddingVertical: 15,
+    borderRadius: 12,
+    alignItems: 'center',
+    elevation: 3,
+  },
+  buttonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  aboutCard: { backgroundColor: '#fff', padding: 15, borderRadius: 10, elevation: 1 },
+  aboutText: { fontSize: 13, color: '#333', textAlign: 'center' },
 });
