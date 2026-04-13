@@ -1,19 +1,19 @@
+cat <<EOF > eas.json
 {
   "cli": {
-    "version": ">= 5.9.1",
-    "appVersionSource": "remote"
+    "version": ">= 5.9.1"
   },
   "build": {
     "preview": {
       "android": {
         "buildType": "apk"
-      },
-      "distribution": "internal"
+      }
     },
     "production": {
       "android": {
-        "buildType": "apk"
+        "buildType": "app-bundle"
       }
     }
   }
 }
+EOF
