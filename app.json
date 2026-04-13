@@ -26,10 +26,10 @@
         "SEND_SMS"
       ]
     },
-    "extra": {
+   "extra": {
       "eas": {
-        "projectId": "3337c316-e32f-41dd-b1f8-50bd040d4f35"
       }
     }
-  }
-}
+      }
+    }
+  
