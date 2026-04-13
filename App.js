@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Alert, Share, ActivityIndicator, ScrollView, Dimensions } from 'react-native';
 import * as Location from 'expo-location';
 import * as SMS from 'expo-sms';
-import MapView, { Marker, Polyline } from 'react-native-maps'; // PROVIDER_GOOGLE aýryldy
+import MapView, { Marker, Polyline } from 'react-native-maps';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function App() {
@@ -59,8 +59,6 @@ export default function App() {
     try {
       let location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
       const { latitude, longitude } = location.coords;
-
-      // DOGRY WE IŞLEÝÄN LINK FORMATY (TM CELL ÜÇIN):
       const mapUrl = `Maps.google.com/?q=${latitude},${longitude}`;
       const messageBody = "YOLBELET: Menin yerim: " + mapUrl;
 
@@ -83,6 +81,7 @@ export default function App() {
     <View style={{ flex: 1 }}>
       <MapView
         ref={mapRef}
+        provider={null}
         style={styles.map}
         showsUserLocation={true}
         followsUserLocation={true}
@@ -135,7 +134,7 @@ export default function App() {
         <View style={styles.aboutCard}>
           <Text style={styles.aboutText}>
             Düzüji: <Text style={{fontWeight: 'bold'}}>Meñli Aşyrowa</Text>. 
-            Gelen ýoluňyz karta çyzylýar. Doňdurlan nokadyňyz gök reňk bilen görkezilýär.
+            Gelen ýoluňyz karta çyzylýar.
           </Text>
         </View>
       </ScrollView>
