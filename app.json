@@ -1,12 +1,11 @@
 {
   "expo": {
-    "name": "yolbelet-app",
+    "name": "Yolbelet 2v",
     "slug": "yolbelet-app",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": false,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.menli.yolbeletapp",
@@ -29,7 +28,7 @@
     },
     "extra": {
       "eas": {
-        "projectId": "100ca5d2-c063-494b-953c-cdc01ccd6c20"
+        "projectId": "3337c316-e32f-41dd-b1f8-50bd040d4f35"
       }
     }
   }
