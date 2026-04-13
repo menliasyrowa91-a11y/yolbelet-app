@@ -1,34 +1,27 @@
 {
   "expo": {
-    "name": "Yolbelet Final",
-    "slug": "yolbelet-final-v2",
+    "name": "Yolbelet Taze",
+    "slug": "yolbelet-taze-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.menli.yolbeletapp"
+      "bundleIdentifier": "com.menli.yolbelet.taze"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.menli.yolbeletapp"
-    },
-    "extra": {
-      "eas": {
-        "projectId": "ŞU_ÝERE_EXPO_ID_KODYNY_GOÝUŇ"
-      }
+      "package": "com.menli.yolbelet.taze",
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "FOREGROUND_SERVICE",
+        "SEND_SMS"
+      ]
     }
   }
 }
