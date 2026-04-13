@@ -1,15 +1,11 @@
 {
   "expo": {
     "name": "Yolbelet 2v",
-    "slug": "yolbelet-final-v2",
+    "slug": "yolbelet-taze-v2",
     "version": "2.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.menli.yolbeletapp"
-    },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
@@ -19,7 +15,7 @@
     },
     "extra": {
       "eas": {
-        "projectId": "ŞU-ÝERE-NUSGALAN-KODY-GOÝUŇ"
+        "projectId": "ŞU_ÝERE_ID_GOÝUŇ"
       }
     }
   }
