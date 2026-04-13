@@ -15,8 +15,6 @@
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
-        "FOREGROUND_SERVICE",
-        "ACCESS_BACKGROUND_LOCATION",
         "SEND_SMS"
       ]
     },
@@ -25,7 +23,7 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Ýolbelet siziň ýoluňyzy yzarlamak üçin hemişe GPS ulanmaly."
+          "locationAlwaysAndWhenInUsePermission": "Ýolbelet siziň ýoluňyzy yzarlamak üçin GPS ulanmaly."
         }
       ]
     ]
