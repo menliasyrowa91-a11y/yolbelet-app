@@ -1,34 +1,25 @@
 {
   "expo": {
     "name": "Yolbelet 2v",
-    "slug": "yolbelet-taze-v2",
+    "slug": "yolbelet-final-v2",
     "version": "2.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.menli.yolbeletapp",
-      "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "Programma siziň ýerleşýän ýeriňizi karta görkezmek we paýlaşmak üçin GPS ulanmaly."
-      }
+      "bundleIdentifier": "com.menli.yolbeletapp"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.menli.yolbeletapp",
-      "permissions": [
-        "ACCESS_COARSE_LOCATION",
-        "ACCESS_FINE_LOCATION",
-        "FOREGROUND_SERVICE",
-        "SEND_SMS"
-      ]
+      "package": "com.menli.yolbeletapp"
     },
     "extra": {
       "eas": {
-        "projectId": "ŞU_ÝERE_TÄZE_ID_GOÝUŇ"
+        "projectId": "ŞU-ÝERE-NUSGALAN-KODY-GOÝUŇ"
       }
     }
   }
