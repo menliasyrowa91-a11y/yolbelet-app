@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Yolbelet 2v",
-    "slug": "yolbelet-app",
+    "slug": "yolbelet-taze-v2",
     "version": "2.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -26,10 +26,10 @@
         "SEND_SMS"
       ]
     },
-   "extra": {
+    "extra": {
       "eas": {
+        "projectId": "ŞU_ÝERE_TÄZE_ID_GOÝUŇ"
       }
     }
-      }
-    }
-  
+  }
+}
