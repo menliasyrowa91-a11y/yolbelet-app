@@ -2,18 +2,17 @@ import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Alert, Share, ActivityIndicator, ScrollView, Dimensions } from 'react-native';
 import * as Location from 'expo-location';
 import * as SMS from 'expo-sms';
-import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { Marker, Polyline } from 'react-native-maps'; // PROVIDER_GOOGLE aýryldy
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function App() {
   const [status, setStatus] = useState("Ulanmaga taýýar");
   const [loading, setLoading] = useState(false);
   const [currentLocation, setCurrentLocation] = useState(null);
-  const [savedPoint, setSavedPoint] = useState(null); // Doňdurlan nokat
-  const [routeCoordinates, setRouteCoordinates] = useState([]); // Gelen ýolumyz
+  const [savedPoint, setSavedPoint] = useState(null); 
+  const [routeCoordinates, setRouteCoordinates] = useState([]); 
   const mapRef = useRef(null);
 
-  // Programma açylanda GPS-i yzarlap başlamak
   useEffect(() => {
     (async () => {
       let { status } = await Location.requestForegroundPermissionsAsync();
@@ -22,27 +21,24 @@ export default function App() {
         return;
       }
 
-      // 7-nji apreldäki kodyň esasy ýörelgesi: Ýoly yzarlamak (Tracking)
       Location.watchPositionAsync(
         {
           accuracy: Location.Accuracy.High,
-          distanceInterval: 10, // Her 10 metrden ýoly ýatda sakla
+          distanceInterval: 10, 
         },
         (location) => {
           const { latitude, longitude } = location.coords;
           const newCoord = { latitude, longitude };
           setCurrentLocation(newCoord);
-          setRouteCoordinates((prev) => [...prev, newCoord]); // Ýoly çyzmak üçin
+          setRouteCoordinates((prev) => [...prev, newCoord]); 
         }
       );
 
-      // Öň ýatda saklanan nokat barmy? (Nokady doňdurylan)
       const storedPoint = await AsyncStorage.getItem('saved_point');
       if (storedPoint) setSavedPoint(JSON.parse(storedPoint));
     })();
   }, []);
 
-  // 1. NOKADY DOŇDUR (Save Point)
   const freezePoint = async () => {
     if (!currentLocation) {
       Alert.alert("Garaşyň", "GPS heniz anyklanmady.");
@@ -57,13 +53,14 @@ export default function App() {
     }
   };
 
-  // 2. ÝERIMI UGRAT (Seniň öňki kodyň - degilmedi)
   const shareLocation = async () => {
     setLoading(true);
     setStatus("Ýerleşýän ýeriňiz anyklanýar...");
     try {
       let location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
       const { latitude, longitude } = location.coords;
+
+      // DOGRY WE IŞLEÝÄN LINK FORMATY (TM CELL ÜÇIN):
       const mapUrl = `Maps.google.com/?q=${latitude},${longitude}`;
       const messageBody = "YOLBELET: Menin yerim: " + mapUrl;
 
@@ -84,24 +81,19 @@ export default function App() {
 
   return (
     <View style={{ flex: 1 }}>
-      {/* KARTA BÖLÜMI */}
       <MapView
         ref={mapRef}
         style={styles.map}
-        provider={PROVIDER_GOOGLE}
         showsUserLocation={true}
         followsUserLocation={true}
         initialRegion={{
-          latitude: 37.96, // Türkmenistan merkezli başlar
+          latitude: 37.96,
           longitude: 58.32,
           latitudeDelta: 0.01,
           longitudeDelta: 0.01,
         }}
       >
-        {/* Gelen ýolumyz (Çyzyk) */}
         <Polyline coordinates={routeCoordinates} strokeWidth={5} strokeColor="#e63946" />
-        
-        {/* Doňdurlan nokat (Belgi) */}
         {savedPoint && (
           <Marker coordinate={savedPoint} title="Doňdurlan Nokat" pinColor="blue" />
         )}
@@ -113,7 +105,6 @@ export default function App() {
           <Text style={styles.statusText}>{status}</Text>
         </View>
 
-        {/* IŞJEŇ DÜWMELER */}
         <View style={styles.actionSection}>
           <TouchableOpacity style={[styles.button, {backgroundColor: '#457b9d'}]} onPress={freezePoint}>
             <Text style={styles.buttonText}>❄️ NOKADY DOŇDUR</Text>
@@ -125,7 +116,17 @@ export default function App() {
 
           <TouchableOpacity 
             style={[styles.button, {backgroundColor: '#1d3557', marginTop: 10}]} 
-            onPress={() => mapRef.current?.animateToRegion(savedPoint || currentLocation)}
+            onPress={() => {
+              const target = savedPoint || currentLocation;
+              if (target) {
+                mapRef.current?.animateToRegion({
+                  latitude: target.latitude,
+                  longitude: target.longitude,
+                  latitudeDelta: 0.01,
+                  longitudeDelta: 0.01,
+                }, 1000);
+              }
+            }}
           >
             <Text style={styles.buttonText}>🔄 MENI YZMA DOLA</Text>
           </TouchableOpacity>
@@ -145,7 +146,7 @@ export default function App() {
 const styles = StyleSheet.create({
   map: {
     width: Dimensions.get('window').width,
-    height: Dimensions.get('window').height * 0.4, // Kartanyň ekrandaky ölçegi
+    height: Dimensions.get('window').height * 0.4,
   },
   container: {
     padding: 20,
