@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Yolbelet 2v",
-    "slug": "yolbelet-taze-v2",
+    "slug": "yolbelet-final-v2026",
     "version": "2.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -15,7 +15,7 @@
     },
     "extra": {
       "eas": {
-        "projectId": "ŞU_ÝERE_ID_GOÝUŇ"
+        "projectId": "KODY_ŞU_ÝERE_GOÝUŇ"
       }
     }
   }
