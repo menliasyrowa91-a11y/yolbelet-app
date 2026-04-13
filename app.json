@@ -1,14 +1,33 @@
 {
   "expo": {
-    "name": "Yolbelet Final V2",
+    "name": "Yolbelet Final",
     "slug": "yolbelet-final-v2",
     "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.menli.yolbeletapp"
+    },
     "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#ffffff"
+      },
       "package": "com.menli.yolbeletapp"
     },
     "extra": {
       "eas": {
-        "projectId": "EXPO-DAN-ALAN-ID-KODUNYZ"
+        "projectId": "ŞU_ÝERE_EXPO_ID_KODYNY_GOÝUŇ"
       }
     }
   }
