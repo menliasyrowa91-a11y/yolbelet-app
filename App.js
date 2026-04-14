@@ -8,16 +8,27 @@ export default function App() {
   const [isReady, setIsReady] = useState(false);
   const [loading, setLoading] = useState(false);
   const [location, setLocation] = useState(null);
-  const [permissionGranted, setPermissionGranted] = useState(false);
 
-  useEffect(() => {
-    (async () => {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status === 'granted') {
-        setPermissionGranted(true);
-      }
-    })();
-  }, []);
+  // 1. GIRIŞ EKRANY (Tekstleriňiz doly dur)
+  if (!isReady) {
+    return (
+      <View style={styles.splashContainer}>
+        <View style={styles.card}>
+          <Text style={styles.title}>📍 Ýolbelet</Text>
+          <Text style={styles.text}>
+            Salam! Men <Text style={{fontWeight: 'bold', color: '#e63946'}}>Meňli Aşyrowa Altyýewna</Text>.{"\n\n"}
+            Bu programma ýolda kynçylyga uçranlara,adresi tapmakda kösenýänlere çalt kömek bermek üçin döredildi. Siz şu düwmä basmak arkaly öz kordinatalaryňyzy ýalňyşsyz we çalt ýagdaýda ýollap bilersiňiz.
+          </Text>
+        </View>
+        <TouchableOpacity 
+          style={styles.mainButton} 
+          onPress={() => setIsReady(true)}
+        >
+          <Text style={styles.buttonText}>DOWAM ET</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   const handleAction = async () => {
     setLoading(true);
@@ -33,7 +44,7 @@ export default function App() {
       const { latitude, longitude } = pos.coords;
       setLocation({ latitude, longitude });
 
-      // Siziň öňki ulanan takyk link formatyňyz:
+      // Siziň isleýän link formatyňyz
       const mapUrl = `Maps.google.com/?q=${latitude},${longitude}`;
       const messageBody = "YOLBELET: Menin yerim: " + mapUrl;
 
@@ -50,42 +61,17 @@ export default function App() {
     }
   };
 
-  if (!isReady) {
-    return (
-      <View style={styles.splashContainer}>
-        <View style={styles.card}>
-          <Text style={styles.title}>📍 Ýolbelet</Text>
-          <Text style={styles.text}>
-            Salam! Men <Text style={{fontWeight: 'bold', color: '#e63946'}}>Meňli Aşyrowa Altyýewna</Text>.
-            Bu programma ýolda kynçylyga uçranlara çalt kömek bermek üçin döredildi.
-          </Text>
-        </View>
-        <TouchableOpacity 
-          style={styles.mainButton} 
-          onPress={() => {
-            if (!permissionGranted) {
-              Alert.alert("Rugsat gerek", "Dowam etmek üçin GPS rugsatyny tassyklamaly.");
-            } else {
-              setIsReady(true);
-            }
-          }}
-        >
-          <Text style={styles.buttonText}>DOWAM ET</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
+  // 2. KARTA EKRANY
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
       <MapView
         style={styles.map}
         showsUserLocation={true}
         initialRegion={{
-          latitude: location?.latitude || 37.96,
-          longitude: location?.longitude || 58.32,
-          latitudeDelta: 0.05,
-          longitudeDelta: 0.05,
+          latitude: 37.96,
+          longitude: 58.32,
+          latitudeDelta: 0.1,
+          longitudeDelta: 0.1,
         }}
       >
         {location && <Marker coordinate={location} title="Men şu ýerde" />}
