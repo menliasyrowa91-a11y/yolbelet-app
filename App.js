@@ -1,107 +1,195 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Alert, Share, ActivityIndicator, Dimensions } from 'react-native';
+import React, { useState } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, Alert, Share, ActivityIndicator, ScrollView, StatusBar } from 'react-native';
 import * as Location from 'expo-location';
 import * as SMS from 'expo-sms';
-import MapView, { Marker } from 'react-native-maps';
 
 export default function App() {
-  const [isReady, setIsReady] = useState(false);
+  const [status, setStatus] = useState("Ulanmaga taýýar");
   const [loading, setLoading] = useState(false);
-  const [location, setLocation] = useState(null);
 
-  // 1. GIRIŞ EKRANY (Tekstleriňiz doly dur)
-  if (!isReady) {
-    return (
-      <View style={styles.splashContainer}>
-        <View style={styles.card}>
-          <Text style={styles.title}>📍 Ýolbelet</Text>
-          <Text style={styles.text}>
-            Salam! Men <Text style={{fontWeight: 'bold', color: '#e63946'}}>Meňli Aşyrowa Altyýewna</Text>.{"\n\n"}
-            Bu programma ýolda kynçylyga uçranlara,adresi tapmakda kösenýänlere çalt kömek bermek üçin döredildi. Siz şu düwmä basmak arkaly öz kordinatalaryňyzy ýalňyşsyz we çalt ýagdaýda ýollap bilersiňiz.
-          </Text>
-        </View>
-        <TouchableOpacity 
-          style={styles.mainButton} 
-          onPress={() => setIsReady(true)}
-        >
-          <Text style={styles.buttonText}>DOWAM ET</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  const handleAction = async () => {
+  const shareLocation = async () => {
     setLoading(true);
+    setStatus("Ýerleşýän ýeriňiz anyklanýar...");
+
     try {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert("Rugsat", "GPS rugsatyny bermeli.");
+      // 1. GPS Rugsady
+      let { status: permissionStatus } = await Location.requestForegroundPermissionsAsync();
+      if (permissionStatus !== 'granted') {
+        Alert.alert("Rugsat berilmedi", "GPS rugsady bolmasa, Ýolbelet işlemäp biler.");
         setLoading(false);
+        setStatus("Rugsat ýok");
         return;
       }
 
-      let pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-      const { latitude, longitude } = pos.coords;
-      setLocation({ latitude, longitude });
+      // 2. Koordinatany almak
+      let location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High,
+      });
 
-      // Siziň isleýän link formatyňyz
+      const { latitude, longitude } = location.coords;
+      
+      // 3. SIZIŇ SYNAGDAN GEÇEN LINKIŇIZ (Asla üýtgedilmedi)
       const mapUrl = `Maps.google.com/?q=${latitude},${longitude}`;
-      const messageBody = "YOLBELET: Menin yerim: " + mapUrl;
+      const messageBody = `ÝOLBELET: Meniň häzirki ýerim: ${mapUrl}`;
 
+      // 4. SMS ugratmak
       const isAvailable = await SMS.isAvailableAsync();
       if (isAvailable) {
-        await SMS.sendSMSAsync([], messageBody);
+        // Nomeri boş goýdum, isleseňiz öňki '+993...' nomeriňizi ýazyp bilersiňiz
+        await SMS.sendSMSAsync([], messageBody); 
+        setStatus("SMS taýýarlandy");
       } else {
         await Share.share({ message: messageBody });
+        setStatus("Paýlaşyldy");
       }
-    } catch (e) {
+    } catch (error) {
       Alert.alert("Ýalňyşlyk", "GPS maglumatyny alyp bolmady.");
+      setStatus("Näsazlyk ýüze çykdy");
     } finally {
       setLoading(false);
     }
   };
 
-  // 2. KARTA EKRANY
   return (
-    <View style={{ flex: 1, backgroundColor: '#fff' }}>
-      <MapView
-        style={styles.map}
-        showsUserLocation={true}
-        initialRegion={{
-          latitude: 37.96,
-          longitude: 58.32,
-          latitudeDelta: 0.1,
-          longitudeDelta: 0.1,
-        }}
-      >
-        {location && <Marker coordinate={location} title="Men şu ýerde" />}
-      </MapView>
+    <View style={{ flex: 1 }}>
+      <StatusBar barStyle="light-content" />
+      <ScrollView contentContainerStyle={styles.container}>
+        
+        <View style={styles.header}>
+          <Text style={styles.logoText}>📍 ÝOLBELET</Text>
+          <View style={styles.line} />
+          <Text style={styles.subTitle}>Seniň ynamdar kömekçiň</Text>
+        </View>
 
-      <View style={styles.bottomBar}>
-        <TouchableOpacity 
-          style={styles.sendButton} 
-          onPress={handleAction}
-          disabled={loading}
-        >
+        <View style={styles.card}>
+          <Text style={styles.aboutHeader}>Programma Barada</Text>
+          <Text style={styles.aboutText}>
+            Salam! Men <Text style={styles.highlightText}>Meňli Aşyrowa Altyýewna</Text>. {"\n"}
+            Bu programma ýolda kynçylyga uçranlara we adresi tapyp bilmeýänlere çalt kömek bermek üçin döredildi.
+          </Text>
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>Bitarap Türkmenistan 🇹🇲</Text>
+          </View>
+        </View>
+
+        <View style={styles.actionSection}>
           {loading ? (
-            <ActivityIndicator color="#fff" />
+            <ActivityIndicator size="large" color="#f1faee" />
           ) : (
-            <Text style={styles.buttonText}>📍 ÝERIMI UGRAT</Text>
+            <TouchableOpacity 
+              activeOpacity={0.8} 
+              style={styles.button} 
+              onPress={shareLocation}>
+              <Text style={styles.buttonText}>📍 ÝERIMI UGRAT</Text>
+            </TouchableOpacity>
           )}
-        </TouchableOpacity>
-      </View>
+          <Text style={styles.statusText}>{status}</Text>
+        </View>
+
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>© 2026 Ýolbelet | Düzüji: Mengli</Text>
+        </View>
+
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  splashContainer: { flex: 1, backgroundColor: '#1d3557', justifyContent: 'center', padding: 25 },
-  card: { backgroundColor: '#fff', padding: 30, borderRadius: 25, elevation: 10, marginBottom: 40 },
-  title: { fontSize: 32, fontWeight: 'bold', color: '#1d3557', marginBottom: 20, textAlign: 'center' },
-  text: { fontSize: 18, color: '#333', lineHeight: 28, textAlign: 'center' },
-  mainButton: { backgroundColor: '#e63946', padding: 22, borderRadius: 15, alignItems: 'center' },
-  sendButton: { backgroundColor: '#e63946', padding: 20, borderRadius: 15, alignItems: 'center', elevation: 8 },
-  buttonText: { color: '#fff', fontSize: 20, fontWeight: 'bold' },
-  bottomBar: { position: 'absolute', bottom: 50, left: 20, right: 20 },
-  map: { width: Dimensions.get('window').width, height: Dimensions.get('window').height }
+  container: {
+    flexGrow: 1,
+    backgroundColor: '#1d3557', 
+    alignItems: 'center',
+    paddingVertical: 60,
+    paddingHorizontal: 25,
+  },
+  header: {
+    marginBottom: 40,
+    alignItems: 'center',
+  },
+  logoText: {
+    fontSize: 40,
+    fontWeight: '900',
+    color: '#f1faee',
+    letterSpacing: 1,
+  },
+  line: {
+    height: 4,
+    width: 50,
+    backgroundColor: '#e63946',
+    marginVertical: 10,
+    borderRadius: 2,
+  },
+  subTitle: {
+    fontSize: 16,
+    color: '#a8dadc',
+  },
+  card: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)', 
+    padding: 20,
+    borderRadius: 15,
+    width: '100%',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    marginBottom: 30,
+  },
+  aboutHeader: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#e63946',
+    marginBottom: 10,
+  },
+  aboutText: {
+    fontSize: 15,
+    color: '#f1faee',
+    lineHeight: 24,
+  },
+  highlightText: {
+    fontWeight: 'bold',
+    color: '#f1faee',
+    textDecorationLine: 'underline',
+  },
+  badge: {
+    backgroundColor: '#457b9d',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 5,
+    marginTop: 15,
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: 'bold',
+  },
+  actionSection: {
+    width: '100%',
+    alignItems: 'center',
+  },
+  button: {
+    backgroundColor: '#e63946', 
+    paddingVertical: 20,
+    width: '100%',
+    borderRadius: 15,
+    alignItems: 'center',
+    elevation: 5,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  statusText: {
+    marginTop: 15,
+    color: '#a8dadc',
+    fontSize: 14,
+  },
+  footer: {
+    marginTop: 'auto',
+    paddingTop: 30,
+  },
+  footerText: {
+    color: '#457b9d',
+    fontSize: 12,
+  },
 });
