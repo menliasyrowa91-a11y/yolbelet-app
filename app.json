@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "yolbelet-app",
+    "name": "Ýolbelet",
     "slug": "yolbelet-app",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -9,13 +9,14 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#1d3557"
       },
       "package": "com.menli.yolbeletapp",
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
-        "SEND_SMS"
+        "android.permission.SEND_SMS",
+        "android.permission.INTERNET"
       ]
     },
     "plugins": [
