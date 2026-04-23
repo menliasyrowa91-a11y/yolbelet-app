@@ -10,7 +10,7 @@ export default function App() {
   // TÄZE: Ýatda saklanjak nokat üçin state
   const [savedLocation, setSavedLocation] = useState(null);
 
-  // BAR BOLAN FUNKSIÝA (Üýtgedilmedi)
+  // BAR BOLAN FUNKSIÝA (Öňki formatyňyz dikeldildi)
   const shareLocation = async () => {
     setLoading(true);
     setStatus("Ýerleşýän ýeriňiz anyklanýar...");
@@ -29,6 +29,7 @@ export default function App() {
       });
 
       const { latitude, longitude } = location.coords;
+      // Siziň öňki goýan setiriňiz (dikeldildi):
       const mapUrl = `Maps.google.com/?q=${latitude},${longitude}`;
       const messageBody = "YOLBELET: Menin yerim: " + mapUrl;
 
@@ -69,7 +70,7 @@ export default function App() {
     }
   };
 
-  // TÄZE: Ýatdaky nokada ýol görkezmek
+  // TÄZE: Ýatdaky nokada ýol görkezmek (Tehniki hatasy düzedildi)
   const goToSavedPoint = async () => {
     if (!savedLocation) {
       Alert.alert("Nokat ýok", "Ilki nokat ýatda saklaň!");
@@ -79,16 +80,17 @@ export default function App() {
     setLoading(true);
     setStatus("Ýol hasaplanýar...");
     try {
-      let currentLocation = await Location.getCurrentPositionAsync({});
+      let currentLocation = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
       
-      // Google Maps-da häzirki ýeriňizden ýatda saklanan nokada çenli ýol açýar
+      // Google Maps üçin halkara standart nawigasiýa salgysy:
       const url = `https://www.google.com/maps/dir/?api=1&origin=${currentLocation.coords.latitude},${currentLocation.coords.longitude}&destination=${savedLocation.latitude},${savedLocation.longitude}&travelmode=walking`;
       
       const supported = await Linking.canOpenURL(url);
       if (supported) {
         await Linking.openURL(url);
+        setStatus("Karta açyldy");
       } else {
-        Alert.alert("Hata", "Kartany açyp bolmady.");
+        await Linking.openURL(url);
       }
     } catch (error) {
       Alert.alert("Hata", "Ugur hasaplananda ýalňyşlyk boldy.");
@@ -117,17 +119,14 @@ export default function App() {
           <ActivityIndicator size="large" color="#e63946" />
         ) : (
           <>
-            {/* 1. SMS ugratmak (Öňki düwme) */}
             <TouchableOpacity style={[styles.button, {marginBottom: 15}]} onPress={shareLocation}>
               <Text style={styles.buttonText}>📍 ÝERIMI UGRAT</Text>
             </TouchableOpacity>
 
-            {/* 2. Nokat doňdurmak (Täze) */}
             <TouchableOpacity style={[styles.button, {backgroundColor: '#1d3557', marginBottom: 15}]} onPress={savePointA}>
               <Text style={styles.buttonText}>💾 NOKADY ÝATDA SAKLA</Text>
             </TouchableOpacity>
 
-            {/* 3. Yzyna dolanmak (Täze) */}
             <TouchableOpacity 
                style={[styles.button, {backgroundColor: savedLocation ? '#457b9d' : '#ccc'}]} 
                onPress={goToSavedPoint}
