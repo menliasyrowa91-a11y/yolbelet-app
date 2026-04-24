@@ -6,17 +6,26 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
-        "backgroundColor": "#1d3557"
+        "backgroundColor": "#ffffff"
       },
       "package": "com.menli.yolbeletapp",
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
         "SEND_SMS",
-        "INTERNET"
+        "INTERNET",
+        "ACCESS_NETWORK_STATE"
       ]
     },
     "plugins": [
@@ -24,7 +33,7 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Yolbelet siziň ýoluňyzy ýzarlamak üçin GPS ulanmaly."
+          "locationAlwaysAndWhenInUsePermission": "Yolbelet siziň ýoluňyzy yzarlamak üçin GPS ulanmaly."
         }
       ]
     ]
