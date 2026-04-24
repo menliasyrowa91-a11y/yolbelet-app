@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Alert, Share, ActivityIndicator, ScrollView, Linking } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Alert, Share, ActivityIndicator, ScrollView, Linking, Image } from 'react-native';
 import * as Location from 'expo-location';
 import * as SMS from 'expo-sms';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -21,7 +21,6 @@ export default function App() {
       const storedPoint = await AsyncStorage.getItem('saved_point');
       if (storedPoint) setSavedPoint(JSON.parse(storedPoint));
 
-      // GPS yzygiderli yzarlamak
       Location.watchPositionAsync(
         {
           accuracy: Location.Accuracy.High,
@@ -45,8 +44,7 @@ export default function App() {
 
     try {
       const { latitude, longitude } = location;
-      // HUT SENIŇ FORMATYŇ:
-      const mapUrl = `Maps.google.com/?q=${latitude},${longitude}`;
+      const mapUrl = `Maps.google.com/?q=${latitude},${longitude}`; // Siziň formatyňyz
       const messageBody = "YOLBELET: Menin yerim: " + mapUrl;
 
       const isAvailable = await SMS.isAvailableAsync();
@@ -81,7 +79,6 @@ export default function App() {
       Alert.alert("Nokat ýok", "Ilki nokady saklamaly.");
       return;
     }
-    // 🔗 SENIŇ IŞLEÝÄN LINK FORMATYŇ:
     const url = `https://Maps.google.com/?q=${savedPoint.latitude},${savedPoint.longitude}`;
     Linking.openURL(url).catch(() => Alert.alert("Hata", "Karta açylmady."));
   };
@@ -89,7 +86,15 @@ export default function App() {
   return (
     <View style={{ flex: 1, backgroundColor: '#f8f9fa' }}>
       <ScrollView contentContainerStyle={styles.container}>
+        
+        {/* LOGO WE HEADER BÖLÜMI */}
         <View style={styles.header}>
+          {/* TÄZE: Siziň ikonanyňyz şu ýere goýuldy */}
+          <Image 
+            source={require('./assets/icon.png')} 
+            style={styles.mainIcon} 
+            resizeMode="contain"
+          />
           <Text style={styles.logoText}>📍 ÝOLBELET</Text>
           <Text style={styles.subTitle}>Siziň ynamdar syýahat hemraňyz</Text>
         </View>
@@ -99,12 +104,12 @@ export default function App() {
           <Text style={styles.aboutText}>
             Salam! Men <Text style={styles.highlightText}>Meňli Aşyrowa Altyýewna</Text>.
             {"\n\n"}
-            "Ýolbelet" programmasynyň esasy maksady — azaşan ulanyjylaryň başlangyç nokadyna (öýine, ulagyna ýa-da lagerine) durnukly dolanmagyny üpjün etmekdir. 
+            "Ýolbelet" programmasynyň esasy maksady — azaşan ulanyjylaryň başlangyç nokadyna (öýine, ulagyna ýa-da lagerine) durnukly dolanmagyny üpjün etmekdir.
             {"\n\n"}
             <Text style={{fontWeight: 'bold'}}>Esasy aýratynlyklary:</Text>
             {"\n"}• <Text style={{fontWeight: '600'}}>Nokady Doňdur:</Text> Başlangyç nokadyňyzy kordinataly ýatda saklaýar.
-            {"\n"}• <Text style={{fontWeight: '600'}}>Yzyna Ýol:</Text> Hatda azaşsaňyz-da, sizi başlangyç nokadyňyza tarap Google Maps arkaly gönükdirýär.
-            {"\n"}• <Text style={{fontWeight: '600'}}>Howpsuzlyk:</Text> Kyn ýagdaýda öz kordinatalaryňyzy ýakynlaryňyza SMS arkaly dessine ugradyp bilersiňiz.
+            {"\n"}• <Text style={{fontWeight: '600'}}>Yzyna Ýol:</Text> Sizi başlangyç nokadyňyza Google Maps arkaly gönükdirýär.
+            {"\n"}• <Text style={{fontWeight: '600'}}>Howpsuzlyk:</Text> Öz kordinatalaryňyzy SMS arkaly dessine ugradyp bilersiňiz.
           </Text>
         </View>
 
@@ -130,12 +135,6 @@ export default function App() {
           )}
           
           <Text style={styles.statusText}>{status}</Text>
-          
-          {savedPoint && (
-            <Text style={styles.savedInfo}>
-              Başlangyç nokadyňyz ýatda ✅
-            </Text>
-          )}
         </View>
       </ScrollView>
       <Text style={styles.footerText}>© 2026 Ýolbelet - Düzüji: Meňli</Text>
@@ -146,7 +145,9 @@ export default function App() {
 const styles = StyleSheet.create({
   container: { flexGrow: 1, paddingVertical: 40, paddingHorizontal: 25 },
   header: { marginBottom: 20, alignItems: 'center' },
-  logoText: { fontSize: 36, fontWeight: '900', color: '#1d3557' },
+  // TÄZE: Ikonanyň stili
+  mainIcon: { width: 100, height: 100, marginBottom: 10, borderRadius: 20 },
+  logoText: { fontSize: 32, fontWeight: '900', color: '#1d3557' },
   subTitle: { fontSize: 16, color: '#457b9d', textAlign: 'center' },
   aboutCard: { backgroundColor: '#ffffff', padding: 25, borderRadius: 20, elevation: 4, marginBottom: 25 },
   aboutHeader: { fontSize: 18, fontWeight: 'bold', color: '#1d3557', marginBottom: 10 },
@@ -157,6 +158,5 @@ const styles = StyleSheet.create({
   btnBlue: { backgroundColor: '#1d3557' },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: 'bold', letterSpacing: 0.5 },
   statusText: { marginTop: 10, color: '#457b9d', fontSize: 14, fontWeight: '600' },
-  savedInfo: { marginTop: 5, color: '#2a9d8f', fontSize: 12, fontStyle: 'italic' },
   footerText: { paddingBottom: 15, color: '#a8dadc', fontSize: 12, textAlign: 'center', backgroundColor: '#f8f9fa' },
 });
