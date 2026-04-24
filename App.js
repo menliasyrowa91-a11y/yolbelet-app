@@ -1,14 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Alert, Share, ActivityIndicator, ScrollView, Linking, Image } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Alert, Share, ActivityIndicator, ScrollView, Linking, Image, Dimensions } from 'react-native';
 import * as Location from 'expo-location';
 import * as SMS from 'expo-sms';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import MapView, { UrlTile, Marker } from 'react-native-maps'; // Täze: Karta üçin
+import { ChevronDown, ChevronUp } from 'lucide-react-native'; // Täze: Ikonajyklar
+
+const OSM_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
 
 export default function App() {
   const [status, setStatus] = useState("Ulanmaga taýýar");
   const [loading, setLoading] = useState(false);
   const [location, setLocation] = useState(null);
   const [savedPoint, setSavedPoint] = useState(null);
+  const [isExpanded, setIsExpanded] = useState(false); // Täze: Header açyp-ýapmak üçin
 
   useEffect(() => {
     (async () => {
@@ -33,7 +38,6 @@ export default function App() {
     })();
   }, []);
 
-  // 🔗 SENIŇ ASYL LINKIŇ (Dolduryldy)
   const shareLocation = async () => {
     if (!location) {
       Alert.alert("Garaşyň", "GPS entek anyklanmady.");
@@ -44,7 +48,7 @@ export default function App() {
 
     try {
       const { latitude, longitude } = location;
-      const mapUrl = `Maps.google.com/?q=${latitude},${longitude}`; // Siziň formatyňyz
+      const mapUrl = `Maps.google.com/?q=${latitude},${longitude}`;
       const messageBody = "YOLBELET: Menin yerim: " + mapUrl;
 
       const isAvailable = await SMS.isAvailableAsync();
@@ -85,78 +89,138 @@ export default function App() {
 
   return (
     <View style={{ flex: 1, backgroundColor: '#f8f9fa' }}>
-      <ScrollView contentContainerStyle={styles.container}>
-        
-        {/* LOGO WE HEADER BÖLÜMI */}
-        <View style={styles.header}>
-          {/* TÄZE: Siziň ikonanyňyz şu ýere goýuldy */}
-          <Image 
-            source={require('./assets/icon.png')} 
-            style={styles.mainIcon} 
-            resizeMode="contain"
-          />
-          <Text style={styles.logoText}>📍 ÝOLBELET</Text>
-          <Text style={styles.subTitle}>Siziň ynamdar syýahat hemraňyz</Text>
+      
+      {/* 🟢 TÄZE: GIZLENÝÄN WE AÇYLYAN HEADER */}
+      <TouchableOpacity 
+        activeOpacity={0.9} 
+        onPress={() => setIsExpanded(!isExpanded)} 
+        style={styles.collapsibleHeader}
+      >
+        <View style={styles.headerRow}>
+          <Image source={require('./assets/icon.png')} style={styles.miniIcon} />
+          <View>
+            <Text style={styles.logoTextSmall}>📍 ÝOLBELET</Text>
+            <Text style={styles.subTitleSmall}>Meňli Aşyrowa (v4 Offline)</Text>
+          </View>
+          <View style={styles.chevronIcon}>
+            {isExpanded ? <ChevronUp size={24} color="#1d3557" /> : <ChevronDown size={24} color="#1d3557" />}
+          </View>
         </View>
 
-        <View style={styles.aboutCard}>
-          <Text style={styles.aboutHeader}>Programmanyň Manysy we Maksady:</Text>
-          <Text style={styles.aboutText}>
-            Salam! Men <Text style={styles.highlightText}>Meňli Aşyrowa Altyýewna</Text>.
-            {"\n\n"}
-            "Ýolbelet" programmasynyň esasy maksady — azaşan ulanyjylaryň başlangyç nokadyna (öýine, ulagyna ýa-da lagerine) durnukly dolanmagyny üpjün etmekdir.
-            {"\n\n"}
-            <Text style={{fontWeight: 'bold'}}>Esasy aýratynlyklary:</Text>
-            {"\n"}• <Text style={{fontWeight: '600'}}>Nokady Doňdur:</Text> Başlangyç nokadyňyzy kordinataly ýatda saklaýar.
-            {"\n"}• <Text style={{fontWeight: '600'}}>Yzyna Ýol:</Text> Sizi başlangyç nokadyňyza Google Maps arkaly gönükdirýär.
-            {"\n"}• <Text style={{fontWeight: '600'}}>Howpsuzlyk:</Text> Öz kordinatalaryňyzy SMS arkaly dessine ugradyp bilersiňiz.
-          </Text>
-        </View>
+        {isExpanded && (
+          <View style={styles.expandedInfo}>
+            <Text style={styles.aboutText}>
+              Salam! Men <Text style={styles.highlightText}>Meňli Aşyrowa Altyýewna</Text>.
+              {"\n\n"}
+              Maksat: Azaşan ulanyjylary başlangyç nokadyna (öýine, ulagyna) durnukly dolandyrmak.
+              {"\n\n"}
+              • <Text style={{fontWeight: 'bold'}}>Nokady Doňdur:</Text> Offline kordinata saklaýar.
+              {"\n"}• <Text style={{fontWeight: 'bold'}}>Yzyna Ýol:</Text> Google Maps arkaly gönükdirýär.
+            </Text>
+          </View>
+        )}
+      </TouchableOpacity>
 
-        <View style={styles.actionSection}>
-          <TouchableOpacity style={[styles.button, styles.btnBlue]} onPress={freezeLocation}>
-            <Text style={styles.buttonText}>📍 BAŞLANGYÇ NOKADY SAKLA</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={[styles.button, {backgroundColor: savedPoint ? '#457b9d' : '#ccc'}]} 
-            onPress={goToSavedPoint}
-            disabled={!savedPoint}
-          >
-            <Text style={styles.buttonText}>🔙 YZYNA ÝOL GÖRKEZ</Text>
-          </TouchableOpacity>
-
-          {loading ? (
-            <ActivityIndicator size="large" color="#e63946" style={{ marginVertical: 10 }} />
-          ) : (
-            <TouchableOpacity style={[styles.button, {marginTop: 5}]} onPress={shareLocation}>
-              <Text style={styles.buttonText}>✉️ ÝERIMI SMS BILEN UGRAT</Text>
-            </TouchableOpacity>
+      {/* 🔵 TÄZE: OFFLINE KARTA BÖLÜMI */}
+      <View style={styles.mapWrapper}>
+        <MapView
+          style={styles.map}
+          initialRegion={{
+            latitude: 38.4333, // Magtymguly (Garrygala)
+            longitude: 54.3667,
+            latitudeDelta: 0.05,
+            longitudeDelta: 0.05,
+          }}
+          mapType="none"
+        >
+          <UrlTile urlTemplate={OSM_URL} shouldReplaceMapContent={true} />
+          {location && <Marker coordinate={location} title="Siziň ýeriňiz" />}
+          {savedPoint && (
+            <Marker 
+              coordinate={savedPoint} 
+              pinColor="blue" 
+              title="Saklanan Nokat" 
+            />
           )}
-          
-          <Text style={styles.statusText}>{status}</Text>
-        </View>
-      </ScrollView>
+        </MapView>
+      </View>
+
+      {/* 🔴 ACTION BUTTONS (Siziň düwmeleriňiz) */}
+      <View style={styles.actionContainer}>
+        <TouchableOpacity style={[styles.button, styles.btnBlue]} onPress={freezeLocation}>
+          <Text style={styles.buttonText}>📍 NOKADY SAKLA</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={[styles.button, {backgroundColor: savedPoint ? '#457b9d' : '#ccc'}]} 
+          onPress={goToSavedPoint}
+          disabled={!savedPoint}
+        >
+          <Text style={styles.buttonText}>🔙 YZYNA ÝOL</Text>
+        </TouchableOpacity>
+
+        {loading ? (
+          <ActivityIndicator size="large" color="#e63946" />
+        ) : (
+          <TouchableOpacity style={styles.button} onPress={shareLocation}>
+            <Text style={styles.buttonText}>✉️ SMS UGRAT</Text>
+          </TouchableOpacity>
+        )}
+        <Text style={styles.statusText}>{status}</Text>
+      </View>
+
       <Text style={styles.footerText}>© 2026 Ýolbelet - Düzüji: Meňli</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flexGrow: 1, paddingVertical: 40, paddingHorizontal: 25 },
-  header: { marginBottom: 20, alignItems: 'center' },
-  // TÄZE: Ikonanyň stili
-  mainIcon: { width: 100, height: 100, marginBottom: 10, borderRadius: 20 },
-  logoText: { fontSize: 32, fontWeight: '900', color: '#1d3557' },
-  subTitle: { fontSize: 16, color: '#457b9d', textAlign: 'center' },
-  aboutCard: { backgroundColor: '#ffffff', padding: 25, borderRadius: 20, elevation: 4, marginBottom: 25 },
-  aboutHeader: { fontSize: 18, fontWeight: 'bold', color: '#1d3557', marginBottom: 10 },
-  aboutText: { fontSize: 15, color: '#444', lineHeight: 22, textAlign: 'justify' },
-  highlightText: { fontWeight: 'bold', color: '#e63946' },
-  actionSection: { width: '100%', alignItems: 'center' },
-  button: { backgroundColor: '#e63946', paddingVertical: 18, borderRadius: 15, width: '100%', alignItems: 'center', elevation: 5, marginBottom: 12 },
+  // Header Stilleri
+  collapsibleHeader: {
+    paddingTop: 50,
+    paddingBottom: 15,
+    paddingHorizontal: 20,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    elevation: 3,
+    zIndex: 10,
+  },
+  headerRow: { flexDirection: 'row', alignItems: 'center' },
+  miniIcon: { width: 40, height: 40, marginRight: 12, borderRadius: 8 },
+  logoTextSmall: { fontSize: 20, fontWeight: '900', color: '#1d3557' },
+  subTitleSmall: { fontSize: 12, color: '#457b9d' },
+  chevronIcon: { flex: 1, alignItems: 'flex-end' },
+  expandedInfo: { marginTop: 15, paddingVertical: 10, borderTopWidth: 1, borderTopColor: '#f1f1f1' },
+  
+  // Karta Stilleri
+  mapWrapper: { flex: 1 },
+  map: { width: '100%', height: '100%' },
+
+  // Düwme Stilleri
+  actionContainer: {
+    padding: 20,
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 25,
+    borderTopRightRadius: 25,
+    elevation: 10,
+  },
+  button: { 
+    backgroundColor: '#e63946', 
+    paddingVertical: 15, 
+    borderRadius: 15, 
+    alignItems: 'center', 
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    elevation: 3
+  },
   btnBlue: { backgroundColor: '#1d3557' },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: 'bold', letterSpacing: 0.5 },
-  statusText: { marginTop: 10, color: '#457b9d', fontSize: 14, fontWeight: '600' },
-  footerText: { paddingBottom: 15, color: '#a8dadc', fontSize: 12, textAlign: 'center', backgroundColor: '#f8f9fa' },
+  buttonText: { color: '#fff', fontSize: 15, fontWeight: 'bold' },
+  
+  aboutText: { fontSize: 14, color: '#444', lineHeight: 20 },
+  highlightText: { fontWeight: 'bold', color: '#e63946' },
+  statusText: { textAlign: 'center', color: '#457b9d', fontSize: 12, marginTop: 5 },
+  footerText: { textAlign: 'center', color: '#999', fontSize: 10, paddingBottom: 10, backgroundColor: '#fff' }
 });
