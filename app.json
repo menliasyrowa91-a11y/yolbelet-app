@@ -15,7 +15,7 @@
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
-        "android.permission.SEND_SMS",
+        "SEND_SMS",
         "INTERNET"
       ]
     },
@@ -24,7 +24,7 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Yolbelet siziň ýoluňyzy yzarlamak üçin GPS ulanmaly."
+          "locationAlwaysAndWhenInUsePermission": "Yolbelet siziň ýoluňyzy ýzarlamak üçin GPS ulanmaly."
         }
       ]
     ]
