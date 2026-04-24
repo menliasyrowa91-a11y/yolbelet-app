@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Ýolbelet",
+    "name": "Yolbelet",
     "slug": "yolbelet-app",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -24,7 +24,7 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Ýolbelet siziň ýoluňyzy yzarlamak üçin GPS ulanmaly."
+          "locationAlwaysAndWhenInUsePermission": "Yolbelet siziň ýoluňyzy yzarlamak üçin GPS ulanmaly."
         }
       ]
     ]
