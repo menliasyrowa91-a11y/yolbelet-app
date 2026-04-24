@@ -17,6 +17,7 @@
     "expo-location": "*",
     "expo-sms": "*",
     "expo-asset": "*",
+    "expo-network": "*",
     "@react-native-async-storage/async-storage": "*",
     "lucide-react-native": "*"
   },
