@@ -1,35 +1,55 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Alert, Share, ActivityIndicator, ScrollView, Linking } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, Alert, Share, ActivityIndicator, ScrollView, Dimensions, Platform, Linking } from 'react-native';
 import * as Location from 'expo-location';
 import * as SMS from 'expo-sms';
+import MapView, { Polyline, Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function App() {
   const [status, setStatus] = useState("Ulanmaga taýýar");
   const [loading, setLoading] = useState(false);
-  
-  // TÄZE: Ýatda saklanjak nokat üçin state
-  const [savedLocation, setSavedLocation] = useState(null);
+  const [location, setLocation] = useState(null);
+  const [routeCoordinates, setRouteCoordinates] = useState([]); 
+  const [savedPoint, setSavedPoint] = useState(null); 
+  const mapRef = useRef(null);
 
-  // BAR BOLAN FUNKSIÝA (Öňki formatyňyz dikeldildi)
-  const shareLocation = async () => {
-    setLoading(true);
-    setStatus("Ýerleşýän ýeriňiz anyklanýar...");
-
-    try {
+  useEffect(() => {
+    (async () => {
       let { status: permissionStatus } = await Location.requestForegroundPermissionsAsync();
       if (permissionStatus !== 'granted') {
-        Alert.alert("Rugsat berilmedi", "GPS rugsady bolmasa, Ýolbelet işlemäp biler.");
-        setLoading(false);
         setStatus("Rugsat ýok");
         return;
       }
 
-      let location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High,
-      });
+      const storedPoint = await AsyncStorage.getItem('saved_point');
+      if (storedPoint) setSavedPoint(JSON.parse(storedPoint));
 
-      const { latitude, longitude } = location.coords;
-      // Siziň öňki goýan setiriňiz (dikeldildi):
+      Location.watchPositionAsync(
+        {
+          accuracy: Location.Accuracy.High,
+          distanceInterval: 10,
+        },
+        (newLocation) => {
+          const { latitude, longitude } = newLocation.coords;
+          const newPoint = { latitude, longitude };
+          setLocation(newPoint);
+          setRouteCoordinates((prev) => [...prev, newPoint]);
+        }
+      );
+    })();
+  }, []);
+
+  const shareLocation = async () => {
+    if (!location) {
+      Alert.alert("Garaşyň", "GPS entek anyklanmady.");
+      return;
+    }
+    setLoading(true);
+    setStatus("Ýerleşýän ýeriňiz anyklanýar...");
+
+    try {
+      const { latitude, longitude } = location;
+      // 🔗 SENIŇ ÖŇKI WE GOWY IŞLEÝÄN LINKIŇ (HUT ÖZÜŇKI):
       const mapUrl = `Maps.google.com/?q=${latitude},${longitude}`;
       const messageBody = "YOLBELET: Menin yerim: " + mapUrl;
 
@@ -49,54 +69,22 @@ export default function App() {
     }
   };
 
-  // TÄZE: Nokady doňdurmak (A nokady)
-  const savePointA = async () => {
-    setLoading(true);
-    setStatus("A nokady ýatda saklanylýar...");
-    try {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert("Hata", "GPS rugsady gerek!");
-        return;
-      }
-      let location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
-      setSavedLocation(location.coords);
-      Alert.alert("Success", "A nokady (başlangyç) ýatda saklandy!");
-      setStatus("A nokady saklandy");
-    } catch (error) {
-      Alert.alert("Hata", "Nokady saklap bolmady.");
-    } finally {
-      setLoading(false);
+  const freezeLocation = async () => {
+    if (location) {
+      await AsyncStorage.setItem('saved_point', JSON.stringify(location));
+      setSavedPoint(location);
+      Alert.alert("Nokat Doňduryldy", "Bu nokat ýatda saklandy we karta goşuldy.");
     }
   };
 
-  // TÄZE: Ýatdaky nokada ýol görkezmek (Tehniki hatasy düzedildi)
-  const goToSavedPoint = async () => {
-    if (!savedLocation) {
-      Alert.alert("Nokat ýok", "Ilki nokat ýatda saklaň!");
+  const goToSavedPoint = () => {
+    if (!savedPoint) {
+      Alert.alert("Nokat ýok", "Ilki nokady doňdurmagyňyz gerek!");
       return;
     }
-
-    setLoading(true);
-    setStatus("Ýol hasaplanýar...");
-    try {
-      let currentLocation = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
-      
-      // Google Maps üçin halkara standart nawigasiýa salgysy:
-      const url = `https://www.google.com/maps/dir/?api=1&origin=${currentLocation.coords.latitude},${currentLocation.coords.longitude}&destination=${savedLocation.latitude},${savedLocation.longitude}&travelmode=walking`;
-      
-      const supported = await Linking.canOpenURL(url);
-      if (supported) {
-        await Linking.openURL(url);
-        setStatus("Karta açyldy");
-      } else {
-        await Linking.openURL(url);
-      }
-    } catch (error) {
-      Alert.alert("Hata", "Ugur hasaplananda ýalňyşlyk boldy.");
-    } finally {
-      setLoading(false);
-    }
+    // 🔗 SENIŇ GOWY IŞLEÝÄN LINK FORMATYŇ:
+    const url = `https://Maps.google.com/?q=${savedPoint.latitude},${savedPoint.longitude}`;
+    Linking.openURL(url).catch(() => Alert.alert("Hata", "Karta açylmady."));
   };
 
   return (
@@ -106,121 +94,83 @@ export default function App() {
         <Text style={styles.subTitle}>Seniň ynamdar kömekçiň</Text>
       </View>
 
+      <View style={styles.mapCard}>
+        <MapView
+          ref={mapRef}
+          style={styles.map}
+          provider={PROVIDER_GOOGLE}
+          showsUserLocation={true}
+          initialRegion={{
+            latitude: 37.95,
+            longitude: 58.38,
+            latitudeDelta: 0.05,
+            longitudeDelta: 0.05,
+          }}
+        >
+          <Polyline coordinates={routeCoordinates} strokeColor="#1d3557" strokeWidth={4} />
+          {savedPoint && (
+            <Marker coordinate={savedPoint} pinColor="#e63946" title="Doňdurylan Nokat" />
+          )}
+          {savedPoint && location && (
+            <Polyline 
+              coordinates={[location, savedPoint]} 
+              strokeColor="#ffb703" 
+              strokeWidth={3} 
+              lineDashPattern={[5, 5]} 
+            />
+          )}
+        </MapView>
+      </View>
+
       <View style={styles.aboutCard}>
         <Text style={styles.aboutHeader}>Programma barada:</Text>
         <Text style={styles.aboutText}>
-          Salam! Men <Text style={{fontWeight: 'bold', color: '#e63946'}}>Meñli Aşyrowa Altyýewna</Text>. 
-          Bu programma ýoluňyzy ýitirmän, başlangyç nokada dolanmaga kömek eder.
+          Salam! Men <Text style={{fontWeight: 'bold', color: '#e63946'}}>Meňli Aşyrowa Altyýewna</Text>.
+          Bu programma azaşanlara çalt kömek bermek üçin döretdim.
         </Text>
       </View>
 
       <View style={styles.actionSection}>
+        <TouchableOpacity style={[styles.button, {backgroundColor: '#1d3557', marginBottom: 12}]} onPress={freezeLocation}>
+          <Text style={styles.buttonText}>📍 NOKADY DOŇDUR</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={[styles.button, {backgroundColor: savedPoint ? '#457b9d' : '#ccc', marginBottom: 12}]} 
+          onPress={goToSavedPoint}
+          disabled={!savedPoint}
+        >
+          <Text style={styles.buttonText}>🔙 YZYNA ÝOL GÖRKEZ</Text>
+        </TouchableOpacity>
+
         {loading ? (
           <ActivityIndicator size="large" color="#e63946" />
         ) : (
-          <>
-            <TouchableOpacity style={[styles.button, {marginBottom: 15}]} onPress={shareLocation}>
-              <Text style={styles.buttonText}>📍 ÝERIMI UGRAT</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={[styles.button, {backgroundColor: '#1d3557', marginBottom: 15}]} onPress={savePointA}>
-              <Text style={styles.buttonText}>💾 NOKADY ÝATDA SAKLA</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-               style={[styles.button, {backgroundColor: savedLocation ? '#457b9d' : '#ccc'}]} 
-               onPress={goToSavedPoint}
-               disabled={!savedLocation}
-            >
-              <Text style={styles.buttonText}>🔙 YZYNA ÝOL GÖRKEZ</Text>
-            </TouchableOpacity>
-          </>
+          <TouchableOpacity style={styles.button} onPress={shareLocation}>
+            <Text style={styles.buttonText}>✉️ ÝERIMI UGRAT</Text>
+          </TouchableOpacity>
         )}
         <Text style={styles.statusText}>{status}</Text>
-        {savedLocation && (
-          <Text style={{fontSize: 10, color: '#999', marginTop: 5}}>
-            Ýatdaky nokat: {savedLocation.latitude.toFixed(4)}, {savedLocation.longitude.toFixed(4)}
-          </Text>
-        )}
       </View>
 
-      <Text style={styles.footerText}>© 2026 Ýolbelet - Düzüji: Mengli</Text>
+      <Text style={styles.footerText}>© 2026 Ýolbelet - Düzüji: Meňli</Text>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    backgroundColor: '#f8f9fa',
-    alignItems: 'center',
-    paddingVertical: 50,
-    paddingHorizontal: 20,
-  },
-  header: {
-    marginBottom: 30,
-    alignItems: 'center',
-  },
-  logoText: {
-    fontSize: 36,
-    fontWeight: '900',
-    color: '#1d3557',
-  },
-  subTitle: {
-    fontSize: 16,
-    color: '#457b9d',
-    marginTop: 5,
-  },
-  aboutCard: {
-    backgroundColor: '#ffffff',
-    padding: 20,
-    borderRadius: 15,
-    width: '100%',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    marginBottom: 30,
-  },
-  aboutHeader: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1d3557',
-    marginBottom: 10,
-  },
-  aboutText: {
-    fontSize: 15,
-    color: '#333',
-    lineHeight: 22,
-  },
-  actionSection: {
-    width: '100%',
-    alignItems: 'center',
-  },
-  button: {
-    backgroundColor: '#e63946',
-    paddingVertical: 18,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    width: '100%',
-    alignItems: 'center',
-    elevation: 5,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-    letterSpacing: 1,
-  },
-  statusText: {
-    marginTop: 15,
-    color: '#457b9d',
-    fontSize: 14,
-  },
-  footerText: {
-    marginTop: 40,
-    color: '#a8dadc',
-    fontSize: 12,
-  },
+  container: { flexGrow: 1, backgroundColor: '#f8f9fa', paddingVertical: 40, paddingHorizontal: 20 },
+  header: { marginBottom: 20, alignItems: 'center' },
+  logoText: { fontSize: 32, fontWeight: '900', color: '#1d3557' },
+  subTitle: { fontSize: 14, color: '#457b9d' },
+  mapCard: { height: 300, width: '100%', borderRadius: 20, overflow: 'hidden', marginBottom: 20, elevation: 4 },
+  map: { flex: 1 },
+  aboutCard: { backgroundColor: '#ffffff', padding: 20, borderRadius: 15, width: '100%', elevation: 3, marginBottom: 20 },
+  aboutHeader: { fontSize: 16, fontWeight: 'bold', color: '#1d3557', marginBottom: 5 },
+  aboutText: { fontSize: 14, color: '#333', lineHeight: 20 },
+  actionSection: { width: '100%', alignItems: 'center' },
+  button: { backgroundColor: '#e63946', paddingVertical: 18, borderRadius: 50, width: '90%', alignItems: 'center', elevation: 5 },
+  buttonText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+  statusText: { marginTop: 10, color: '#457b9d', fontSize: 13 },
+  footerText: { marginTop: 20, color: '#a8dadc', fontSize: 11, textAlign: 'center' },
 });
