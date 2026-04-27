@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Ýolbelet",
+    "name": "Yolbelet",
     "slug": "yolbelet-app",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -20,13 +20,17 @@
       ]
     },
     "plugins": [
-      "expo-asset",
       [
         "expo-location",
         {
           "locationAlwaysAndWhenInUsePermission": "Ýolbelet siziň ýoluňyzy yzarlamak üçin GPS ulanmaly."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "43b72145-dd68-42ea-8338-173b793a2912"
+      }
+    }
   }
 }
