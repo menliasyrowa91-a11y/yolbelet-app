@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Alert, Share, ActivityIndicator, ScrollView, Linking } from 'react-native';
 import * as Location from 'expo-location';
 import * as SMS from 'expo-sms';
@@ -9,6 +9,16 @@ export default function App() {
   
   // TÄZE: Ýatda saklanjak nokat üçin state
   const [savedLocation, setSavedLocation] = useState(null);
+
+  // MÖHÜM: Awtomatiki ýatda saklamak habary
+  useEffect(() => {
+    Alert.alert(
+      "YOLBELET: AWTOMATIKI ÝATDA SAKLAMAK 📱",
+      "Seniň gezelenç edýän meýdanlaryň awtomatiki usulda telefonyň ýadyna (cache) ýazylýar.\n\n" +
+      "MÖHÜM: Karta doly ýazylar ýaly, gezelenje başlamazdan ozal internet bar wagty barjak meýdanyňyza bir gezek göz aýlaň. Şondan soň interneti öçürseňiz hem 'Ýolbelet' ýoluňyzy tapar!",
+      [{ text: "Düşünikli, dowam et!" }]
+    );
+  }, []);
 
   // BAR BOLAN FUNKSIÝA (Öňki formatyňyz dikeldildi)
   const shareLocation = async () => {
@@ -29,7 +39,6 @@ export default function App() {
       });
 
       const { latitude, longitude } = location.coords;
-      // Siziň öňki goýan setiriňiz (dikeldildi):
       const mapUrl = `Maps.google.com/?q=${latitude},${longitude}`;
       const messageBody = "YOLBELET: Menin yerim: " + mapUrl;
 
@@ -82,7 +91,6 @@ export default function App() {
     try {
       let currentLocation = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
       
-      // Google Maps üçin halkara standart nawigasiýa salgysy:
       const url = `http://googleusercontent.com/maps.google.com/6{currentLocation.coords.latitude},${currentLocation.coords.longitude}&destination=${savedLocation.latitude},${savedLocation.longitude}&travelmode=walking`;
       
       const supported = await Linking.canOpenURL(url);
@@ -119,12 +127,10 @@ export default function App() {
           <ActivityIndicator size="large" color="#e63946" />
         ) : (
           <>
-            {/* 1. ÝERIMI UGRAT DÜWMESI */}
             <TouchableOpacity style={[styles.button, {marginBottom: 15}]} onPress={shareLocation}>
               <Text style={styles.buttonText}>📍 ÝERIMI UGRAT</Text>
             </TouchableOpacity>
 
-            {/* 2. DINAMIKI DÜWME (Nokat ýok bolsa SAKLA, bar bolsa TÄZELE görkezýär) */}
             {!savedLocation ? (
               <TouchableOpacity 
                 style={[styles.button, {backgroundColor: '#1d3557', marginBottom: 15}]} 
@@ -141,7 +147,6 @@ export default function App() {
               </TouchableOpacity>
             )}
 
-            {/* 3. YZYNA ÝOL GÖRKEZ DÜWMESI */}
             <TouchableOpacity 
                style={[styles.button, {backgroundColor: savedLocation ? '#457b9d' : '#ccc'}]} 
                onPress={goToSavedPoint}
