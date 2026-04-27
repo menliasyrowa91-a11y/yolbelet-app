@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Alert, Share, ActivityIndicator, ScrollView, Linking } from 'react-native';
 import * as Location from 'expo-location';
 import * as SMS from 'expo-sms';
+import MapView, { Kml, PROVIDER_GOOGLE } from 'react-native-maps'; // TÄZE: Karta we KMZ goldawy
+import { Asset } from 'expo-asset'; // TÄZE: KMZ faýlyny okamak üçin
 
 export default function App() {
   const [status, setStatus] = useState("Ulanmaga taýýar");
@@ -10,9 +12,22 @@ export default function App() {
   
   // TÄZE: Ýatda saklanjak nokat üçin state
   const [savedLocation, setSavedLocation] = useState(null);
+  const [kmlUri, setKmlUri] = useState(null); // TÄZE: KMZ faýlynyň ýoly
 
-  // MÖHÜM: Awtomatiki ýatda saklamak habary
+  // MÖHÜM: Awtomatiki ýatda saklamak habary we KMZ taýýarlamak
   useEffect(() => {
+    // TÄZE: KMZ faýlyny assets içinden okatmak
+    async function prepareKml() {
+      try {
+        const asset = Asset.fromModule(require('./assets/Yolbelet-un-offline.kmz'));
+        await asset.downloadAsync();
+        setKmlUri(asset.localUri);
+      } catch (e) {
+        console.log("KMZ ýüklenip bilinmedi");
+      }
+    }
+    prepareKml();
+
     Alert.alert(
       "YOLBELET: AWTOMATIKI ÝATDA SAKLAMAK 📱",
       "Seniň gezelenç edýän meýdanlaryň awtomatiki usulda telefonyň ýadyna (cache) ýazylýar.\n\n" +
@@ -115,7 +130,20 @@ export default function App() {
         <Text style={styles.subTitle}>Seniň ynamdar kömekçiň</Text>
       </View>
 
-      {/* TÄZELENEN BÖLÜM: Basylanda açylýan tekst */}
+      {/* TÄZE: KARTA WE KMZ BÖLÜMI (Seniň dizaýnyňda saklandy) */}
+      <View style={styles.mapWrapper}>
+        <MapView
+          style={styles.map}
+          provider={PROVIDER_GOOGLE}
+          showsUserLocation={true}
+          followsUserLocation={true}
+          loadingEnabled={true}
+        >
+          {kmlUri && <Kml kmlAsset={kmlUri} />}
+        </MapView>
+      </View>
+
+      {/* TÄZELENEN BÖLÜM: Basylanda açylýan tekst (Seniň tekstleriňe degilmedi) */}
       <TouchableOpacity 
         activeOpacity={0.8} 
         onPress={() => setShowFullText(!showFullText)} 
@@ -124,7 +152,7 @@ export default function App() {
         <Text style={styles.aboutHeader}>Programma barada:</Text>
         <Text style={styles.aboutText}>
           Men <Text style={{fontWeight: 'bold', color: '#e63946'}}>Meñli Aşyrowa</Text>. 
-          Bu ulgam siziň ýoluňyzy ýitirmezligiňiz üçin niýetlenendir...
+          Bu ulgam siziň gerekli ýeriňizi tiz tapmagyňyz üçin,azaşmazlygyňyz üçin,azaşaýan ýagdaýyňyzda hem yzyňyza ýoluňyzy tapmak üçin niýetlenendir...
           {showFullText && (
             <Text>
               {"\n\n"}
@@ -208,6 +236,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#457b9d',
     marginTop: 5,
+  },
+  // KARTA ÜÇIN STIL
+  mapWrapper: {
+    width: '100%',
+    height: 250,
+    borderRadius: 15,
+    overflow: 'hidden',
+    marginBottom: 30,
+    elevation: 3,
+    backgroundColor: '#fff',
+  },
+  map: {
+    width: '100%',
+    height: '100%',
   },
   aboutCard: {
     backgroundColor: '#ffffff',
