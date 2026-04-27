@@ -83,7 +83,7 @@ export default function App() {
       let currentLocation = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
       
       // Google Maps üçin halkara standart nawigasiýa salgysy:
-      const url = `https://www.google.com/maps/dir/?api=1&origin=${currentLocation.coords.latitude},${currentLocation.coords.longitude}&destination=${savedLocation.latitude},${savedLocation.longitude}&travelmode=walking`;
+      const url = `http://googleusercontent.com/maps.google.com/6{currentLocation.coords.latitude},${currentLocation.coords.longitude}&destination=${savedLocation.latitude},${savedLocation.longitude}&travelmode=walking`;
       
       const supported = await Linking.canOpenURL(url);
       if (supported) {
@@ -119,14 +119,29 @@ export default function App() {
           <ActivityIndicator size="large" color="#e63946" />
         ) : (
           <>
+            {/* 1. ÝERIMI UGRAT DÜWMESI */}
             <TouchableOpacity style={[styles.button, {marginBottom: 15}]} onPress={shareLocation}>
               <Text style={styles.buttonText}>📍 ÝERIMI UGRAT</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={[styles.button, {backgroundColor: '#1d3557', marginBottom: 15}]} onPress={savePointA}>
-              <Text style={styles.buttonText}>💾 NOKADY ÝATDA SAKLA</Text>
-            </TouchableOpacity>
+            {/* 2. DINAMIKI DÜWME (Nokat ýok bolsa SAKLA, bar bolsa TÄZELE görkezýär) */}
+            {!savedLocation ? (
+              <TouchableOpacity 
+                style={[styles.button, {backgroundColor: '#1d3557', marginBottom: 15}]} 
+                onPress={savePointA}
+              >
+                <Text style={styles.buttonText}>💾 NOKADY ÝATDA SAKLA</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity 
+                style={[styles.button, {backgroundColor: '#e63946', marginBottom: 15}]} 
+                onPress={() => setSavedLocation(null)}
+              >
+                <Text style={styles.buttonText}>🔄 TÄZE NOKAT BELLE</Text>
+              </TouchableOpacity>
+            )}
 
+            {/* 3. YZYNA ÝOL GÖRKEZ DÜWMESI */}
             <TouchableOpacity 
                style={[styles.button, {backgroundColor: savedLocation ? '#457b9d' : '#ccc'}]} 
                onPress={goToSavedPoint}
@@ -136,7 +151,9 @@ export default function App() {
             </TouchableOpacity>
           </>
         )}
+        
         <Text style={styles.statusText}>{status}</Text>
+        
         {savedLocation && (
           <Text style={{fontSize: 10, color: '#999', marginTop: 5}}>
             Ýatdaky nokat: {savedLocation.latitude.toFixed(4)}, {savedLocation.longitude.toFixed(4)}
