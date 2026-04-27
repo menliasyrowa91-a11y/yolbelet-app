@@ -6,6 +6,7 @@ import * as SMS from 'expo-sms';
 export default function App() {
   const [status, setStatus] = useState("Ulanmaga taýýar");
   const [loading, setLoading] = useState(false);
+  const [showFullText, setShowFullText] = useState(false); // Teksti açyp-ýapmak üçin state
   
   // TÄZE: Ýatda saklanjak nokat üçin state
   const [savedLocation, setSavedLocation] = useState(null);
@@ -114,13 +115,28 @@ export default function App() {
         <Text style={styles.subTitle}>Seniň ynamdar kömekçiň</Text>
       </View>
 
-      <View style={styles.aboutCard}>
+      {/* TÄZELENEN BÖLÜM: Basylanda açylýan tekst */}
+      <TouchableOpacity 
+        activeOpacity={0.8} 
+        onPress={() => setShowFullText(!showFullText)} 
+        style={styles.aboutCard}
+      >
         <Text style={styles.aboutHeader}>Programma barada:</Text>
         <Text style={styles.aboutText}>
-          Salam! Men <Text style={{fontWeight: 'bold', color: '#e63946'}}>Meñli Aşyrowa Altyýewna</Text>. 
-          Bu programma ýoluňyzy ýitirmän, başlangyç nokada dolanmaga kömek eder.
+          Men <Text style={{fontWeight: 'bold', color: '#e63946'}}>Meñli Aşyrowa</Text>. 
+          Bu ulgam siziň ýoluňyzy ýitirmezligiňiz üçin niýetlenendir...
+          {showFullText && (
+            <Text>
+              {"\n\n"}
+              1. <Text style={{fontWeight: 'bold'}}>Ýeriňi ugrat:</Text> Adyňyzy ýa-da ýeriňizi aýdyp bilmedik wagtyňyz, duran nokadyňyzy SMS bilen ugradyň.{"\n\n"}
+              2. <Text style={{fontWeight: 'bold'}}>Nokady ýatda sakla:</Text> Eger ýere beletligiňiz ýok bolsa, bilýän ýeriňizde nokady, ýagny duran ýeriňizi belleýärsiňiz. Bu soňra "Yzyna ýol görkez" düwmäniň kömegi arkaly yzyňyzy tapmaga kömek eder.
+            </Text>
+          )}
         </Text>
-      </View>
+        <Text style={{color: '#457b9d', fontSize: 12, marginTop: 10, textAlign: 'right'}}>
+          {showFullText ? "Gysgalt ▲" : "Doly oka ▼"}
+        </Text>
+      </TouchableOpacity>
 
       <View style={styles.actionSection}>
         {loading ? (
