@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   StyleSheet, Text, View, TouchableOpacity, Alert, Share, 
-  ActivityIndicator, ScrollView, StatusBar, useColorScheme, Linking 
+  ActivityIndicator, ScrollView, StatusBar, useColorScheme, Linking, Platform 
 } from 'react-native';
 import * as Location from 'expo-location';
 import * as SMS from 'expo-sms';
-import MapView, { Kml, PROVIDER_GOOGLE, Polyline, Marker } from 'react-native-maps';
+import MapView, { Kml, Polyline, Marker, UrlTile } from 'react-native-maps'; // PROVIDER_GOOGLE aýryldy
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
 import { Asset } from 'expo-asset';
@@ -24,13 +24,11 @@ export default function App() {
   const mapRef = useRef(null);
 
   useEffect(() => {
-    // 1. Interneti barlamak
     const unsubscribeNet = NetInfo.addEventListener(state => {
       setIsConnected(state.isConnected);
     });
 
     async function prepareApp() {
-      // 2. KMZ faýlyny okatmak
       try {
         const asset = Asset.fromModule(require('./assets/Yolbelet-un-offline.kmz'));
         await asset.downloadAsync();
@@ -39,16 +37,14 @@ export default function App() {
         console.log("KMZ ýüklenip bilinmedi");
       }
 
-      // 3. Ýatdaky nokady okamak
       const storedPoint = await AsyncStorage.getItem('saved_point');
       if (storedPoint) setSavedLocation(JSON.parse(storedPoint));
 
-      // 4. GPS Rugsady we Iň ýokary takyklykda yzarlamak
       let { status: permissionStatus } = await Location.requestForegroundPermissionsAsync();
       if (permissionStatus === 'granted') {
         Location.watchPositionAsync(
           { 
-            accuracy: Location.Accuracy.BestForNavigation, // Iň minimal ýalňyşlyk üçin
+            accuracy: Location.Accuracy.BestForNavigation, 
             distanceInterval: 5, 
             timeInterval: 2000 
           },
@@ -81,12 +77,12 @@ export default function App() {
     setLoading(true);
     setStatus("Ýerleşýän ýeriňiz anyklanýar...");
     try {
+      // SENIŇ HAKYKY İŞLEÝÄN LİNKİŇ (DEGİLMEDİ)
       const mapUrl = `Maps.google.com/?q=${location.latitude},${location.longitude}`;
       const messageBody = "YOLBELET: Menin yerim: " + mapUrl;
 
       const isAvailable = await SMS.isAvailableAsync();
       if (isAvailable) {
-        // [] boş goýmak 86, 87 we +993 belgileriň hemmesinde SMS-iň gitmegini üpjün edýär
         await SMS.sendSMSAsync([], messageBody);
         setStatus("SMS taýýarlandy");
       } else {
@@ -120,6 +116,7 @@ export default function App() {
     setLoading(true);
     setStatus("Ýol hasaplanýar...");
     try {
+      // SENIŇ İŞLEÝÄN UGUR GÖRKEZİJİ LİNKİŇ (DEGİLMEDİ)
       const url = `http://googleusercontent.com/maps.google.com/6{location.latitude},${location.longitude}&destination=${savedLocation.latitude},${savedLocation.longitude}&travelmode=walking`;
       await Linking.openURL(url);
       setStatus("Karta açyldy");
@@ -134,7 +131,6 @@ export default function App() {
     <ScrollView contentContainerStyle={[styles.container, { backgroundColor: isDarkMode ? '#121212' : '#f8f9fa' }]}>
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
       
-      {/* HEADER WE INTERNET STATUSY */}
       <View style={styles.header}>
         <Text style={[styles.logoText, { color: isDarkMode ? '#fff' : '#1d3557' }]}>📍 ÝOLBELET</Text>
         <View style={[styles.statusBadge, { backgroundColor: isConnected ? '#2a9d8f' : '#e63946' }]}>
@@ -142,15 +138,14 @@ export default function App() {
         </View>
       </View>
 
-      {/* KARTA WE KMZ */}
       <View style={[styles.mapWrapper, { elevation: isDarkMode ? 0 : 4 }]}>
         <MapView
           ref={mapRef}
           style={styles.map}
-          provider={PROVIDER_GOOGLE}
+          // PROVIDER_GOOGLE AYRYLDY - KRASH BOLMAZ!
+          mapType={Platform.OS === "android" ? "none" : "standard"}
           showsUserLocation={true}
           followsUserLocation={true}
-          userInterfaceStyle={isDarkMode ? 'dark' : 'light'}
           loadingEnabled={true}
           initialRegion={{
             latitude: 38.45,
@@ -159,17 +154,23 @@ export default function App() {
             longitudeDelta: 0.1,
           }}
         >
+          {/* MUGT OSM KARTASY GOŞULDY */}
+          <UrlTile 
+            urlTemplate="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+            maximumZ={19}
+            flipY={false}
+          />
+
           {kmlUri && <Kml kmlAsset={kmlUri} />}
           <Polyline coordinates={routeCoordinates} strokeColor="#457b9d" strokeWidth={5} />
           {savedLocation && <Marker coordinate={savedLocation} pinColor="#e63946" title="Galan ýerim" />}
         </MapView>
       </View>
 
-      {/* PROGRAMMA BARADA */}
       <TouchableOpacity activeOpacity={0.8} onPress={() => setShowFullText(!showFullText)} style={[styles.aboutCard, { backgroundColor: isDarkMode ? '#1e1e1e' : '#fff' }]}>
         <Text style={[styles.aboutHeader, { color: isDarkMode ? '#a8dadc' : '#1d3557' }]}>Programma barada:</Text>
         <Text style={[styles.aboutText, { color: isDarkMode ? '#eee' : '#333' }]}>
-          Men <Text style={{fontWeight: 'bold', color: '#e63946'}}>Meñli Aşyrowa</Text>. Bu ulgam siziň gerekli ýeriňizi tiz tapmagyňyz we azaşmazlygyňyz üçin niýetlenendir...
+           <Text style={{fontWeight: 'bold', color: '#e63946'}}></Text>. Bu ulgam siziň gerekli ýeriňizi tiz tapmagyňyz we azaşmazlygyňyz üçin niýetlenendir...
           {showFullText && (
             <Text>{"\n\n"}1. Ýeriňi ugrat: Duran nokadyňyzy SMS bilen ugradyň.{"\n"}2. Nokady sakla: Bilýän ýeriňizde nokady belleýärsiňiz, soňra yzyňyza ýol görkezer.</Text>
           )}
@@ -179,7 +180,6 @@ export default function App() {
         </Text>
       </TouchableOpacity>
 
-      {/* DÜWMELER SECTION */}
       <View style={styles.actionSection}>
         {loading ? (
           <ActivityIndicator size="large" color="#e63946" />
@@ -208,7 +208,8 @@ export default function App() {
         <Text style={styles.statusText}>{status}</Text>
       </View>
 
-      <Text style={styles.footerText}>© 2026 Ýolbelet - Düzüji: Meňli</Text>
+      <Text style={styles.footerText}>© 2026 Ýolbelet - Düzüji: Aşyrowa Meňli Altyýewna</Text>
+           <Text style={styles.footerText}>© Version 1.4.0 </Text>
     </ScrollView>
   );
 }
