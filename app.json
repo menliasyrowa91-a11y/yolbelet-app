@@ -5,7 +5,10 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
@@ -18,7 +21,12 @@
         "android.permission.SEND_SMS",
         "android.permission.INTERNET",
         "android.permission.ACCESS_BACKGROUND_LOCATION"
-      ]
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": "SENI_GOOGLE_MAPS_API_KIDIN" 
+        }
+      }
     },
     "plugins": [
       [
