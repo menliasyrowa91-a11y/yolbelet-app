@@ -30,7 +30,8 @@
         {
           "locationAlwaysAndWhenInUsePermission": "Ýolbelet siziň ýoluňyzy yzarlamak üçin GPS ulanmaly."
         }
-      ]
+      ],
+      "expo-asset"
     ],
     "extra": {
       "eas": {
