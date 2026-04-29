@@ -21,12 +21,7 @@
         "android.permission.SEND_SMS",
         "android.permission.INTERNET",
         "android.permission.ACCESS_BACKGROUND_LOCATION"
-      ],
-      "config": {
-        "googleMaps": {
-          "apiKey": "SENI_GOOGLE_MAPS_API_KIDIN" 
-        }
-      }
+      ]
     },
     "plugins": [
       [
@@ -38,7 +33,7 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "fad12c21-a7aa-46b4-8fb1-b3952c7b5191"
+        "projectId": null
       }
     }
   }
