@@ -6,7 +6,6 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -29,8 +28,7 @@
         {
           "locationAlwaysAndWhenInUsePermission": "Ýolbelet siziň ýoluňyzy yzarlamak üçin GPS ulanmaly."
         }
-      ],
-      "expo-asset"
+      ]
     ],
     "extra": {
       "eas": {
