@@ -3,29 +3,19 @@
     "name": "Yolbelet",
     "slug": "yolbelet-app",
     "version": "1.4.1",
-    "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "automatic",
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "icon": "./assets/icon.png", 
     "android": {
+      "package": "com.menli.yolbeletapp",
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#1d3557"
       },
-      "package": "com.menli.yolbeletapp",
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
         "android.permission.SEND_SMS",
         "android.permission.INTERNET"
       ]
-    },
-    "extra": {
-      "eas": {
-        "projectId": "fad12c21-a7aa-46b4-8f81-b3952c7b5191"
-      }
     }
   }
 }
