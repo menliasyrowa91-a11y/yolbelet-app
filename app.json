@@ -20,8 +20,7 @@
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
         "android.permission.SEND_SMS",
-        "android.permission.INTERNET",
-        "android.permission.ACCESS_BACKGROUND_LOCATION"
+        "android.permission.INTERNET"
       ]
     },
     "plugins": [
@@ -37,12 +36,6 @@
       "eas": {
         "projectId": "fad12c21-a7aa-46b4-8f81-b3952c7b5191"
       }
-    },
-    "updates": {
-      "url": "https://u.expo.dev/fad12c21-a7aa-46b4-8f81-b3952c7b5191"
-    },
-    "runtimeVersion": {
-      "policy": "appVersion"
     }
   }
 }
