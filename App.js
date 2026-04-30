@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import * as Location from 'expo-location';
 import * as SMS from 'expo-sms';
-import MapView, { Kml, Polyline, Marker, UrlTile } from 'react-native-maps'; // PROVIDER_GOOGLE aýryldy
+import MapView, { Kml, Polyline, Marker, UrlTile } from 'react-native-maps'; 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
 import { Asset } from 'expo-asset';
@@ -58,14 +58,6 @@ export default function App() {
     }
 
     prepareApp();
-
-    Alert.alert(
-      "YOLBELET: AWTOMATIKI ÝATDA SAKLAMAK 📱",
-      "Seniň gezelenç edýän meýdanlaryň awtomatiki usulda telefonyň ýadyna (cache) ýazylýar.\n\n" +
-      "MÖHÜM: Karta doly ýazylar ýaly, internet bar wagty barjak meýdanyňyza bir gezek göz aýlaň.",
-      [{ text: "Düşünikli, dowam et!" }]
-    );
-
     return () => unsubscribeNet();
   }, []);
 
@@ -77,7 +69,7 @@ export default function App() {
     setLoading(true);
     setStatus("Ýerleşýän ýeriňiz anyklanýar...");
     try {
-      // SENIŇ HAKYKY İŞLEÝÄN LİNKİŇ (DEGİLMEDİ)
+      // SENIŇ ÖZ İŞLEÝÄN LİNKİŇ (GÖNÜMEL GOÝULDY)
       const mapUrl = `Maps.google.com/?q=${location.latitude},${location.longitude}`;
       const messageBody = "YOLBELET: Menin yerim: " + mapUrl;
 
@@ -116,12 +108,14 @@ export default function App() {
     setLoading(true);
     setStatus("Ýol hasaplanýar...");
     try {
-      // SENIŇ İŞLEÝÄN UGUR GÖRKEZİJİ LİNKİŇ (DEGİLMEDİ)
+      // SENIŇ ÖZ İŞLEÝÄN UGUR GÖRKEZİJİ LİNKİŇ
       const url = `http://googleusercontent.com/maps.google.com/6{location.latitude},${location.longitude}&destination=${savedLocation.latitude},${savedLocation.longitude}&travelmode=walking`;
       await Linking.openURL(url);
       setStatus("Karta açyldy");
     } catch (error) {
-      Alert.alert("Hata", "Ugur hasaplananda ýalňyşlyk boldy.");
+      // Käwagt http:// bilen başlaýan linkde säwlik bolsa, standart usulda hem synanyşýarys
+      const backupUrl = `https://www.google.com/maps/dir/?api=1&origin=${location.latitude},${location.longitude}&destination=${savedLocation.latitude},${savedLocation.longitude}`;
+      await Linking.openURL(backupUrl);
     } finally {
       setLoading(false);
     }
@@ -142,10 +136,8 @@ export default function App() {
         <MapView
           ref={mapRef}
           style={styles.map}
-          // PROVIDER_GOOGLE AYRYLDY - KRASH BOLMAZ!
-          mapType={Platform.OS === "android" ? "none" : "standard"}
+          mapType="standard" 
           showsUserLocation={true}
-          followsUserLocation={true}
           loadingEnabled={true}
           initialRegion={{
             latitude: 38.45,
@@ -154,13 +146,10 @@ export default function App() {
             longitudeDelta: 0.1,
           }}
         >
-          {/* MUGT OSM KARTASY GOŞULDY */}
           <UrlTile 
             urlTemplate="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
             maximumZ={19}
-            flipY={false}
           />
-
           {kmlUri && <Kml kmlAsset={kmlUri} />}
           <Polyline coordinates={routeCoordinates} strokeColor="#457b9d" strokeWidth={5} />
           {savedLocation && <Marker coordinate={savedLocation} pinColor="#e63946" title="Galan ýerim" />}
@@ -170,7 +159,7 @@ export default function App() {
       <TouchableOpacity activeOpacity={0.8} onPress={() => setShowFullText(!showFullText)} style={[styles.aboutCard, { backgroundColor: isDarkMode ? '#1e1e1e' : '#fff' }]}>
         <Text style={[styles.aboutHeader, { color: isDarkMode ? '#a8dadc' : '#1d3557' }]}>Programma barada:</Text>
         <Text style={[styles.aboutText, { color: isDarkMode ? '#eee' : '#333' }]}>
-           <Text style={{fontWeight: 'bold', color: '#e63946'}}></Text>. Bu ulgam siziň gerekli ýeriňizi tiz tapmagyňyz we azaşmazlygyňyz üçin niýetlenendir...
+           <Text style={{fontWeight: 'bold', color: '#e63946'}}>Meñli Aşyrowa Altyýewna</Text>. Bu ulgam siziň gerekli ýeriňizi tiz tapmagyňyz we azaşmazlygyňyz üçin niýetlenendir...
           {showFullText && (
             <Text>{"\n\n"}1. Ýeriňi ugrat: Duran nokadyňyzy SMS bilen ugradyň.{"\n"}2. Nokady sakla: Bilýän ýeriňizde nokady belleýärsiňiz, soňra yzyňyza ýol görkezer.</Text>
           )}
@@ -209,7 +198,7 @@ export default function App() {
       </View>
 
       <Text style={styles.footerText}>© 2026 Ýolbelet - Düzüji: Aşyrowa Meňli Altyýewna</Text>
-           <Text style={styles.footerText}>© Version 1.4.0 </Text>
+      <Text style={styles.footerText}>© Version 1.4.1 </Text>
     </ScrollView>
   );
 }
