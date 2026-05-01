@@ -3,18 +3,37 @@
     "name": "Yolbelet",
     "slug": "yolbelet-app",
     "version": "1.5.0",
+    "orientation": "portrait",
     "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1d3557"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
     "android": {
-      "package": "com.menli.yolbeletapp",
-      "permissions": [
-        "ACCESS_COARSE_LOCATION",
-        "ACCESS_FINE_LOCATION",
-        "android.permission.SEND_SMS",
-        "android.permission.INTERNET"
-      ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#1d3557"
+      },
+      "package": "com.menli.yolbeletapp",
+      "targetSdkVersion": 34,
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "SEND_SMS",
+        "INTERNET"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/icon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "senin-taslama-id-nokat"
       }
     }
   }
