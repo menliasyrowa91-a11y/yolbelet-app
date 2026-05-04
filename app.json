@@ -12,7 +12,12 @@
       "backgroundColor": "#1d3557"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.menli.yolbeletapp",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Yolbelet programmasy ýoluňyzy karta ýazgy etmek üçin GPS ulanýar.",
+        "NSLocationAlwaysUsageDescription": "Programma arka planda hem ýoluňyzy yzarlamak üçin hemişelik GPS rugsady gerek."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -20,12 +25,16 @@
         "backgroundColor": "#1d3557"
       },
       "package": "com.menli.yolbeletapp",
-      "targetSdkVersion": 34,
+      "versionCode": 1,
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_LOCATION",
         "SEND_SMS",
-        "INTERNET"
+        "INTERNET",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
       ]
     },
     "web": {
@@ -33,7 +42,7 @@
     },
     "extra": {
       "eas": {
-        "projectId": "senin-taslama-id-nokat"
+        "projectId": "a50a9d81-3da9-4dcc-a2fc-4a4001efb3c2" 
       }
     }
   }
