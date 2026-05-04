@@ -96,21 +96,23 @@ export default function App() {
 
       <View style={styles.mapContainer}>
         {mapReady && region ? (
-          <MapView
-            style={styles.map}
-            initialRegion={region}
-            // PROVIDER_GOOGLE aýyryldy, indi krasş bermez
-            mapCacheEnabled={true} 
-          >
-            <UrlTile 
-              urlTemplate="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-              maximumZ={19}
-              shouldReplaceMapContent={true} 
-            />
-            <Marker coordinate={region} title="Siz şu ýerde" />
-            {savedLocation && <Marker coordinate={savedLocation} pinColor="blue" title="A nokady" />}
-            <Polyline coordinates={path} strokeColor="#e63946" strokeWidth={4} />
-          </MapView>
+          // ... 103-nji setir töweregi
+<MapView
+  style={styles.map}
+  initialRegion={region}
+  mapCacheEnabled={true}
+>
+  {/* INI ŞU ÝERE GOÝMALY: */}
+  <UrlTile 
+    urlTemplate="https://tiles.stadiamaps.com/tiles/osm_bright/{z}/{x}/{y}.png"
+    maximumZ={19}
+    shouldReplaceMapContent={true} 
+  />
+
+  <Marker coordinate={region} title="Siz şu ýerde" />
+  {savedLocation && <Marker coordinate={savedLocation} pinColor="blue" title="A nokady" />}
+  <Polyline coordinates={path} strokeColor="#e63946" strokeWidth={4} />
+</MapView>
         ) : (
           <View style={styles.mapPlaceholder}>
             <ActivityIndicator size="small" color="#1d3557" />
