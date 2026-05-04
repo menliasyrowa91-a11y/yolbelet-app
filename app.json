@@ -2,7 +2,7 @@
   "expo": {
     "name": "Ýolbelet",
     "slug": "yolbelet-app",
-    "version": "1.0.4",
+    "version": "1.0.5",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -29,11 +29,17 @@
       },
       "package": "com.menli.yolbeletapp",
       "jsEngine": "hermes",
+      "config": {
+        "googleMaps": {
+          "apiKey": "" 
+        }
+      },
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
         "android.permission.INTERNET",
-        "android.permission.SEND_SMS"
+        "android.permission.SEND_SMS",
+        "android.permission.FOREGROUND_SERVICE"
       ]
     },
     "extra": {
