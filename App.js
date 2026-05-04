@@ -17,29 +17,39 @@ export default function App() {
 
   useEffect(() => {
     (async () => {
-      let { status: perm } = await Location.requestForegroundPermissionsAsync();
-      if (perm !== 'granted') {
-        setStatus("GPS rugsady berilmedi");
-        return;
+      try {
+        let { status: perm } = await Location.requestForegroundPermissionsAsync();
+        if (perm !== 'granted') {
+          setStatus("GPS rugsady berilmedi");
+          return;
+        }
+        
+        let location = await Location.getCurrentPositionAsync({ 
+          accuracy: Location.Accuracy.Balanced 
+        });
+
+        if (location) {
+          setRegion({
+            latitude: location.coords.latitude,
+            longitude: location.coords.longitude,
+            latitudeDelta: 0.01,
+            longitudeDelta: 0.01,
+          });
+          setMapReady(true);
+        }
+      } catch (error) {
+        setStatus("GPS näsazlygy");
       }
-      let location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-      setRegion({
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
-      });
-      setMapReady(true);
     })();
   }, []);
 
-  // FUNKSIÝA 1: ÝERIMI UGRAT (DEGMELI DÄL: Seniň original tekstiň we linkiň)
+  // FUNKSIÝA 1: ÝERIMI UGRAT (Original tekst we link saklandy)
   const shareLocation = async () => {
     setLoading(true);
     try {
       let location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
       const { latitude, longitude } = location.coords;
-      const mapUrl = `Maps.google.com/?q=${latitude},${longitude}`; // Seniň original formatyň
+      const mapUrl = `Maps.google.com/?q=${latitude},${longitude}`; 
       const messageBody = "YOLBELET: Menin yerim: " + mapUrl;
 
       const isAvailable = await SMS.isAvailableAsync();
@@ -71,7 +81,7 @@ export default function App() {
     }
   };
 
-  // FUNKSIÝA 3: ÝOL ÝAZGYSY (Mugt we Durnukly)
+  // FUNKSIÝA 3: ÝOL ÝAZGYSY
   const toggleTracking = async () => {
     if (isTracking) {
       if (trackingSubscriber.current) {
@@ -122,10 +132,10 @@ export default function App() {
             initialRegion={region}
             mapCacheEnabled={true}
           >
-            {/* IŇ DURNUKLY MUGT SERWER: Stadia Maps */}
             <UrlTile 
               urlTemplate="https://tiles.stadiamaps.com/tiles/osm_bright/{z}/{x}/{y}.png"
               maximumZ={19}
+              zIndex={1}
             />
             <Marker coordinate={region} title="Siz şu ýerde" />
             {savedLocation && <Marker coordinate={savedLocation} pinColor="blue" title="A nokady" />}
@@ -141,8 +151,8 @@ export default function App() {
 
       <View style={styles.aboutCard}>
         <Text style={styles.aboutText}>
-          Salam! <Text style={{fontWeight: 'bold', color: '#e63946'}}>Ulanyjy</Text>. 
-          Bu programmany öz ýerleşýän ýeriňizi tiz bildirmegiňiz üçin,mundan başga-da näbelet ýerlerde azaşmazlygyňyz üçin döretdim.
+          Salam!  <Text style={{fontWeight: 'bold', color: '#e63946'}}>Ulanyjy</Text>. 
+          Bu programmany öz ýerleşýän ýeriňizi çalt sms arkaly ugradyp bilmegiňiz üçin we nätänyş ýerlerde azaşmazlygyňyz üçin döretdim
         </Text>
       </View>
 
@@ -166,7 +176,7 @@ export default function App() {
         <Text style={styles.statusText}>{status}</Text>
       </View>
 
-      <Text style={styles.footerText}>© 2026 Ýolbelet - Düzüji: Aşyrowa Meňli Altyýewna</Text>
+      <Text style={styles.footerText}>© 2026 Ýolbelet - Düzüji: Aşyrowa Meňli Altyýewna </Text>
     </ScrollView>
   );
 }
