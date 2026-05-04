@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Alert, Share, ActivityIndicator, ScrollView, Linking } from 'react-native';
 import * as Location from 'expo-location';
 import * as SMS from 'expo-sms';
-import MapView, { Marker, UrlTile, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { Marker, UrlTile, Polyline } from 'react-native-maps'; // PROVIDER_GOOGLE aýyryldy
 
 export default function App() {
   const [status, setStatus] = useState("Ulanmaga taýýar");
@@ -37,7 +37,7 @@ export default function App() {
     try {
       let location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
       const { latitude, longitude } = location.coords;
-      const mapUrl = `Maps.google.com/?q=${latitude},${longitude}`;
+      const mapUrl = `https://www.google.com/maps/?q=${latitude},${longitude}`;
       const messageBody = "YOLBELET: Menin yerim: " + mapUrl;
       const isAvailable = await SMS.isAvailableAsync();
       if (isAvailable) {
@@ -97,16 +97,15 @@ export default function App() {
       <View style={styles.mapContainer}>
         {mapReady && region ? (
           <MapView
-            provider={PROVIDER_GOOGLE} // BU GEREK: Mugt SDK motor
             style={styles.map}
             initialRegion={region}
-            mapType="none" // Google-yň öz kartasyny öçürýäris (pul ýazmazlygy üçin)
-            mapCacheEnabled={true} // OFFLINE KEŞ ŞU TAÝDA!
+            // PROVIDER_GOOGLE aýyryldy, indi krasş bermez
+            mapCacheEnabled={true} 
           >
             <UrlTile 
-              urlTemplate="https://tiles.stadiamaps.com/tiles/osm_bright/{z}/{x}/{y}.png"
+              urlTemplate="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
               maximumZ={19}
-              shouldReplaceMapContent={true} // Karta suratyny Stadia Maps bilen çalşyr
+              shouldReplaceMapContent={true} 
             />
             <Marker coordinate={region} title="Siz şu ýerde" />
             {savedLocation && <Marker coordinate={savedLocation} pinColor="blue" title="A nokady" />}
@@ -123,7 +122,7 @@ export default function App() {
       <View style={styles.aboutCard}>
         <Text style={styles.aboutText}>
           Salam! Men <Text style={{fontWeight: 'bold', color: '#e63946'}}>Meñli Aşyrowa</Text>. 
-          Bu programmany öz ýerleşýän ýeriňizi çalt sms arkaly ugradyp bilmegiňiz üçin we nätänyş ýerlerde azaşmazlygyňyz üçin döretdim
+          Bu programmany öz ýerleşýän ýeriňizi çalt sms arkaly ugradyp bilmegiňiz üçin we nätänyş ýerlerde azaşmazlygyňyz üçin döretdim.
         </Text>
       </View>
 
