@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "Yolbelet",
+    "name": "Ýolbelet",
     "slug": "yolbelet-app",
-    "version": "1.5.0",
+    "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -11,12 +11,15 @@
       "resizeMode": "contain",
       "backgroundColor": "#1d3557"
     },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.menli.yolbeletapp",
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "Yolbelet programmasy ýoluňyzy karta ýazgy etmek üçin GPS ulanýar.",
-        "NSLocationAlwaysUsageDescription": "Programma arka planda hem ýoluňyzy yzarlamak üçin hemişelik GPS rugsady gerek."
+        "NSLocationWhenInUseUsageDescription": "Ýolbelet siziň ýoluňyzy yzarlamak üçin GPS ulanmaly.",
+        "NSLocationAlwaysUsageDescription": "Ýolbelet siziň ýoluňyzy arka fonda hem yzarlap biler."
       }
     },
     "android": {
@@ -25,25 +28,12 @@
         "backgroundColor": "#1d3557"
       },
       "package": "com.menli.yolbeletapp",
-      "versionCode": 1,
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
-        "FOREGROUND_SERVICE",
-        "FOREGROUND_SERVICE_LOCATION",
-        "SEND_SMS",
-        "INTERNET",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE"
+        "android.permission.INTERNET",
+        "android.permission.SEND_SMS"
       ]
-    },
-    "web": {
-      "favicon": "./assets/icon.png"
-    },
-    "extra": {
-      "eas": {
-        "projectId": "a50a9d81-3da9-4dcc-a2fc-4a4001efb3c2" 
-      }
     }
   }
 }
