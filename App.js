@@ -1,46 +1,39 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Alert, Share, ActivityIndicator, ScrollView } from 'react-native';
-import MapView, { Polyline, Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import * as Location from 'expo-location';
 import * as SMS from 'expo-sms';
 import { Asset } from 'expo-asset';
 
 export default function App() {
-  // --- PROGRAMMANYŇ ÝAGDAÝY (STATE) ---
-  const [status, setStatus] = useState("Ulanmaga taýýar"); // Ekranda görünýän maglumat haty
-  const [loading, setLoading] = useState(false); // Ýüklenip duran wagty (Loading) görkezmek üçin
-  const [path, setPath] = useState([]); // Ulanyjynyň hakyky ýörän nokatlaryny saklaýan sanaw (Array)
-  const [isTracking, setIsTracking] = useState(false); // Ýol ýazgysynyň açyk ýa-da ýapykdygyny bilmek üçin
-  const mapRef = useRef(null); // Karta gönüden-göni buýruk bermek üçin (mysal üçin: kamerany süýşürmek)
+  const [status, setStatus] = useState("Ulanmaga taýýar");
+  const [loading, setLoading] = useState(false);
+  const [path, setPath] = useState([]);
+  const [isTracking, setIsTracking] = useState(false);
+  const mapRef = useRef(null);
+  
+  // MÖHÜM: Yzarlamany saklamak üçin useRef ulanmaly
+  const trackingSubscriber = useRef(null);
 
-  /**
-   * 1. ÝERIMI SMS BILEN UGRAT
-   * Bu funksiýa häzirki GPS koordinatalaryny alýar we Google Maps çyzgysy (link) görnüşinde
-   * SMS ýa-da başga programmalar arkaly paýlaşmaga mümkinçilik berýär.
-   */
+  // 1. ÝERIMI PAÝLAŞ
   const shareLocation = async () => {
     setLoading(true);
     try {
-      // GPS ulanmak üçin ulanyjydan rugsat soraýarys
       let { status: perm } = await Location.requestForegroundPermissionsAsync();
       if (perm !== 'granted') {
         Alert.alert("Rugsat ýok", "GPS rugsady gerek.");
         return;
       }
 
-      // Häzirki ýerimizi iň ýokary takyklykda anyklaýarys
-      let loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Highest });
-      
-      // Google Maps linkini döredýäris
-      const url = `Maps.google.com/?q=${loc.coords.latitude},${loc.coords.longitude}`;
+      let loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      const url = `https://www.google.com/maps/search/?api=1&query=${loc.coords.latitude},${loc.coords.longitude}`;
       const msg = "YOLBELET: Menin yerim: " + url;
 
-      // SMS ugradyp bolýandygyny barlaýarys
       const isSms = await SMS.isAvailableAsync();
       if (isSms) {
-        await SMS.sendSMSAsync([], msg); // SMS programmasyny açýar
+        await SMS.sendSMSAsync([], msg);
       } else {
-        await Share.share({ message: msg }); // Başga programmalar (WhatsApp, Telegram) arkaly paýlaşýar
+        await Share.share({ message: msg });
       }
       setStatus("Ýerleşýän ýeriňiz paýlaşyldy");
     } catch (e) {
@@ -50,20 +43,19 @@ export default function App() {
     }
   };
 
-  /**
-   * 2. ÝOL ÝAZGYSYNY BAŞLAT/DURUZ
-   * Bu funksiýa "Breadcrumbing" usuly bilen işleýär. Ulanyjy ýörände, 
-   * her 3 metrden täze koordinatany 'path' sanawyna goşýar.
-   */
+  // 2. ÝOL ÝAZGYSYNY BAŞLAT/DURUZ (DÜZEDILEN)
   const toggleTracking = async () => {
-    // Eger eýýäm ýazgy edilip duran bolsa, ony duruzýarys
     if (isTracking) {
+      // Yzarlamany duruzmak örän möhüm!
+      if (trackingSubscriber.current) {
+        trackingSubscriber.current.remove();
+        trackingSubscriber.current = null;
+      }
       setIsTracking(false);
       setStatus("Ýol ýazgy edildi.");
       return;
     }
 
-    // GPS rugsady barlanýar
     let { status: perm } = await Location.requestForegroundPermissionsAsync();
     if (perm !== 'granted') {
       Alert.alert("Rugsat ýok", "Ýol ýazmak üçin GPS gerek.");
@@ -71,72 +63,56 @@ export default function App() {
     }
 
     setIsTracking(true);
-    setPath([]); // Täze ýazgy başlananda öňki ýoly arassalaýarys
+    setPath([]);
     setStatus("Ýörän ýoluňyz ýazylýar...");
 
-    // Ulanyjynyň hereketini yzarlamaga başlaýarys
-    await Location.watchPositionAsync(
+    // Yzarlamany useRef içine saklaýarys
+    trackingSubscriber.current = await Location.watchPositionAsync(
       {
-        accuracy: Location.Accuracy.Highest, // Iň ýokary GPS takyklygy
-        distanceInterval: 3, // Ulanyjy her 3 metr ýörediginden täze nokat goýar
+        accuracy: Location.Accuracy.High,
+        distanceInterval: 5, // Metri azajyk köpelttik, batareýa we durnuklylyk üçin
       },
       (newLoc) => {
         const { latitude, longitude } = newLoc.coords;
-        // Täze nokady öňki nokatlaryň üstüne goşýarys
         setPath((currentPath) => [...currentPath, { latitude, longitude }]);
       }
     );
   };
 
-  /**
-   * 3. OFFLINE KMZ GÖRKEZMEK
-   * Internet ýok wagty öňden taýýarlanan meýdan maglumatlaryny (KMZ) 
-   * kartaň üstüne gatlak hökmünde ýükleýär.
-   */
+  // 3. OFFLINE KMZ ÝÜKLE
   const loadOfflineKMZ = async () => {
     try {
-      // Assets papkasyndaky KMZ faýlyny tapýarys
       const kmz = Asset.fromModule(require('./assets/Yolbelet-un-offline.kmz'));
-      await kmz.downloadAsync(); // Faýly telefonyň ýadyna ýükleýäris
-      Alert.alert("Offline Karta", "KMZ gatlagy işjeňleşdirildi.");
+      await kmz.downloadAsync();
+      Alert.alert("Offline Karta", "KMZ faýly işjeňleşdirildi.");
       setStatus("Offline gatlak açyk");
     } catch (e) {
-      Alert.alert("Hata", "KMZ faýly tapylmady. 'assets' papkasynda faýlyň barlygyny barlaň.");
+      Alert.alert("Hata", "Assets papkasynda 'Yolbelet-un-offline.kmz' faýlynyň barlygyny barlaň.");
     }
   };
 
-  // --- EKRAN GÖRNÜŞI (UI) ---
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {/* Ýokarky Logo we Sözbaşy */}
       <View style={styles.header}>
         <Text style={styles.logoText}>📍 ÝOLBELET</Text>
         <Text style={styles.subTitle}>Düzüji: Meňli Aşyrowa</Text>
       </View>
 
-      {/* KARTA MEÝDANÇASY */}
       <View style={styles.mapContainer}>
         <MapView
           ref={mapRef}
           style={styles.map}
           provider={PROVIDER_GOOGLE}
-          showsUserLocation={true} // Ulanyjynyň özüni kartaň üstünde görkezmek
-          followsUserLocation={true} // Kameranyň ulanyjy bilen bile süýşmegi
+          showsUserLocation={true}
+          followsUserLocation={true}
         >
-          {/* Ýazgy edilen ýoly kartaň üstünde gyzyl çyzyk hökmünde çyzýarys */}
           {path.length > 0 && (
-            <Polyline
-              coordinates={path}
-              strokeColor="#e63946" // Çyzygyň reňki
-              strokeWidth={5} // Çyzygyň galyňlygy
-            />
+            <Polyline coordinates={path} strokeColor="#e63946" strokeWidth={5} />
           )}
         </MapView>
       </View>
 
-      {/* DÜWMELER BÖLÜMI */}
       <View style={styles.actionSection}>
-        {/* Ýol Ýazgysyny Başlat/Duruz Düwmesi */}
         <TouchableOpacity 
           style={[styles.button, {backgroundColor: isTracking ? '#1d3557' : '#e63946'}]} 
           onPress={toggleTracking}
@@ -146,24 +122,20 @@ export default function App() {
           </Text>
         </TouchableOpacity>
 
-        {/* SMS Düwmesi */}
-        <TouchableOpacity style={[styles.button, {backgroundColor: '#457b9d'}]} onPress={shareLocation}>
-          <Text style={styles.buttonText}>📲 ÝERIMI SMS UGRAT</Text>
+        <TouchableOpacity style={[styles.button, {backgroundColor: '#457b9d'}]} onPress={shareLocation} disabled={loading}>
+          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>📲 ÝERIMI SMS UGRAT</Text>}
         </TouchableOpacity>
 
-        {/* Offline KMZ Düwmesi */}
         <TouchableOpacity style={[styles.button, {backgroundColor: '#2a9d8f'}]} onPress={loadOfflineKMZ}>
           <Text style={styles.buttonText}>🗺️ OFFLINE KMZ ÝÜKLE</Text>
         </TouchableOpacity>
 
-        {/* Häzirki Ýagdaýy Görkezýän Tekst */}
         <Text style={styles.statusText}>Ýagdaý: {status}</Text>
       </View>
     </ScrollView>
   );
 }
 
-// --- REŇKLER WE STIL (CSS) ---
 const styles = StyleSheet.create({
   container: { flexGrow: 1, backgroundColor: '#f8f9fa', paddingVertical: 40, paddingHorizontal: 20 },
   header: { alignItems: 'center', marginBottom: 20 },
