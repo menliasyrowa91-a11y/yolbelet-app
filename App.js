@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Alert, Share, ActivityIndicator, ScrollView, Linking } from 'react-native';
 import * as Location from 'expo-location';
 import * as SMS from 'expo-sms';
-import MapView, { Marker, UrlTile, Polyline } from 'react-native-maps';
+import MapView, { Marker, UrlTile, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 
 export default function App() {
   const [status, setStatus] = useState("Ulanmaga taýýar");
@@ -11,47 +11,34 @@ export default function App() {
   const [isTracking, setIsTracking] = useState(false);
   const [path, setPath] = useState([]);
   const trackingSubscriber = useRef(null);
-
   const [region, setRegion] = useState(null);
   const [mapReady, setMapReady] = useState(false);
 
   useEffect(() => {
     (async () => {
-      try {
-        let { status: perm } = await Location.requestForegroundPermissionsAsync();
-        if (perm !== 'granted') {
-          setStatus("GPS rugsady berilmedi");
-          return;
-        }
-        
-        let location = await Location.getCurrentPositionAsync({ 
-          accuracy: Location.Accuracy.Balanced 
-        });
-
-        if (location) {
-          setRegion({
-            latitude: location.coords.latitude,
-            longitude: location.coords.longitude,
-            latitudeDelta: 0.01,
-            longitudeDelta: 0.01,
-          });
-          setMapReady(true);
-        }
-      } catch (error) {
-        setStatus("GPS näsazlygy");
+      let { status: perm } = await Location.requestForegroundPermissionsAsync();
+      if (perm !== 'granted') {
+        setStatus("GPS rugsady berilmedi");
+        return;
       }
+      let location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      setRegion({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      });
+      setMapReady(true);
     })();
   }, []);
 
-  // FUNKSIÝA 1: ÝERIMI UGRAT (Original tekst we link saklandy)
   const shareLocation = async () => {
     setLoading(true);
     try {
       let location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
       const { latitude, longitude } = location.coords;
-      const mapUrl = `Maps.google.com/?q=${latitude},${longitude}`; 
+      const mapUrl = `Maps.google.com/?q=${latitude},${longitude}`;
       const messageBody = "YOLBELET: Menin yerim: " + mapUrl;
-
       const isAvailable = await SMS.isAvailableAsync();
       if (isAvailable) {
         await SMS.sendSMSAsync([], messageBody);
@@ -59,14 +46,9 @@ export default function App() {
       } else {
         await Share.share({ message: messageBody });
       }
-    } catch (error) {
-      Alert.alert("Hata", "GPS tapylmady.");
-    } finally {
-      setLoading(false);
-    }
+    } catch (error) { Alert.alert("Hata", "GPS tapylmady."); } finally { setLoading(false); }
   };
 
-  // FUNKSIÝA 2: NOKADY ÝATDA SAKLA
   const savePointA = async () => {
     setLoading(true);
     try {
@@ -74,20 +56,12 @@ export default function App() {
       setSavedLocation(location.coords);
       setStatus("A nokady saklandy");
       Alert.alert("Üstünlik", "A nokady ýatda saklandy!");
-    } catch (error) {
-      Alert.alert("Hata", "Nokady saklap bolmady.");
-    } finally {
-      setLoading(false);
-    }
+    } catch (error) { Alert.alert("Hata", "Nokady saklap bolmady."); } finally { setLoading(false); }
   };
 
-  // FUNKSIÝA 3: ÝOL ÝAZGYSY
   const toggleTracking = async () => {
     if (isTracking) {
-      if (trackingSubscriber.current) {
-        trackingSubscriber.current.remove();
-        trackingSubscriber.current = null;
-      }
+      if (trackingSubscriber.current) { trackingSubscriber.current.remove(); trackingSubscriber.current = null; }
       setIsTracking(false);
       setStatus(`Ýazgy durdy.`);
       return;
@@ -103,7 +77,6 @@ export default function App() {
     );
   };
 
-  // FUNKSIÝA 4: YZYNA ÝOL GÖRKEZ
   const goToSavedPoint = async () => {
     if (!savedLocation) return;
     setLoading(true);
@@ -111,11 +84,7 @@ export default function App() {
       let current = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
       const url = `https://www.google.com/maps/dir/?api=1&origin=${current.coords.latitude},${current.coords.longitude}&destination=${savedLocation.latitude},${savedLocation.longitude}&travelmode=walking`;
       await Linking.openURL(url);
-    } catch (error) {
-      Alert.alert("Hata", "Ugur açylmady.");
-    } finally {
-      setLoading(false);
-    }
+    } catch (error) { Alert.alert("Hata", "Ugur açylmady."); } finally { setLoading(false); }
   };
 
   return (
@@ -128,14 +97,16 @@ export default function App() {
       <View style={styles.mapContainer}>
         {mapReady && region ? (
           <MapView
+            provider={PROVIDER_GOOGLE} // BU GEREK: Mugt SDK motor
             style={styles.map}
             initialRegion={region}
-            mapCacheEnabled={true}
+            mapType="none" // Google-yň öz kartasyny öçürýäris (pul ýazmazlygy üçin)
+            mapCacheEnabled={true} // OFFLINE KEŞ ŞU TAÝDA!
           >
             <UrlTile 
               urlTemplate="https://tiles.stadiamaps.com/tiles/osm_bright/{z}/{x}/{y}.png"
               maximumZ={19}
-              zIndex={1}
+              shouldReplaceMapContent={true} // Karta suratyny Stadia Maps bilen çalşyr
             />
             <Marker coordinate={region} title="Siz şu ýerde" />
             {savedLocation && <Marker coordinate={savedLocation} pinColor="blue" title="A nokady" />}
@@ -151,7 +122,7 @@ export default function App() {
 
       <View style={styles.aboutCard}>
         <Text style={styles.aboutText}>
-          Salam!  <Text style={{fontWeight: 'bold', color: '#e63946'}}>Ulanyjy</Text>. 
+          Salam! Men <Text style={{fontWeight: 'bold', color: '#e63946'}}>Meñli Aşyrowa</Text>. 
           Bu programmany öz ýerleşýän ýeriňizi çalt sms arkaly ugradyp bilmegiňiz üçin we nätänyş ýerlerde azaşmazlygyňyz üçin döretdim
         </Text>
       </View>
@@ -175,7 +146,6 @@ export default function App() {
         )}
         <Text style={styles.statusText}>{status}</Text>
       </View>
-
       <Text style={styles.footerText}>© 2026 Ýolbelet - Düzüji: Aşyrowa Meňli Altyýewna </Text>
     </ScrollView>
   );
