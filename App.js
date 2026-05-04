@@ -141,8 +141,8 @@ export default function App() {
 
       <View style={styles.aboutCard}>
         <Text style={styles.aboutText}>
-          Salam! Men <Text style={{fontWeight: 'bold', color: '#e63946'}}>Meñli Aşyrowa</Text>. 
-          Bu programma ýoluňyzy ýitirmän, başlangyç nokada dolanmaga kömek eder.
+          Salam! <Text style={{fontWeight: 'bold', color: '#e63946'}}>Ulanyjy</Text>. 
+          Bu programmany öz ýerleşýän ýeriňizi tiz bildirmegiňiz üçin,mundan başga-da näbelet ýerlerde azaşmazlygyňyz üçin döretdim.
         </Text>
       </View>
 
@@ -166,7 +166,7 @@ export default function App() {
         <Text style={styles.statusText}>{status}</Text>
       </View>
 
-      <Text style={styles.footerText}>© 2026 Ýolbelet - Düzüji: Meňli</Text>
+      <Text style={styles.footerText}>© 2026 Ýolbelet - Düzüji: Aşyrowa Meňli Altyýewna</Text>
     </ScrollView>
   );
 }
