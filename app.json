@@ -39,8 +39,9 @@
     },
     "extra": {
       "eas": {
-        "projectId": "834c203b-3a8e-4a73-a73d-1eb4ae3c11c9"
+        "projectId": "6801fb20-7da6-4e60-ba07-3741d7c34738"
       }
-    }
+    },
+    "owner": "mengli"
   }
 }
