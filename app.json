@@ -3,6 +3,7 @@
     "name": "Ýolbelet",
     "slug": "yolbelet-app",
     "version": "1.0.7",
+    "sdkVersion": "52.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -14,14 +15,6 @@
     "assetBundlePatterns": [
       "**/*"
     ],
-    "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.menli.yolbeletapp",
-      "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "Ýolbelet siziň ýoluňyzy yzarlamak üçin GPS ulanmaly.",
-        "NSLocationAlwaysUsageDescription": "Ýolbelet siziň ýoluňyzy arka fonda hem yzarlap biler."
-      }
-    },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
@@ -32,9 +25,10 @@
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
-        "android.permission.INTERNET",
-        "android.permission.SEND_SMS",
-        "android.permission.FOREGROUND_SERVICE"
+        "ACCESS_BACKGROUND_LOCATION",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_LOCATION",
+        "INTERNET"
       ]
     },
     "extra": {
