@@ -17,9 +17,10 @@ export default function App() {
   const [savedLocation, setSavedLocation] = useState(null);
   const [status, setStatus] = useState("Garaşylýar...");
   const mapRef = useRef(null);
+  const locationSubscription = useRef(null);
 
   useEffect(() => {
-    const unsubscribe = NetInfo.addEventListener(state => {
+    const unsubscribeNet = NetInfo.addEventListener(state => {
       setIsConnected(state.isConnected ?? true);
     });
 
@@ -27,11 +28,7 @@ export default function App() {
       try {
         const stored = await AsyncStorage.getItem('saved_point');
         if (stored) {
-          try {
-            setSavedLocation(JSON.parse(stored));
-          } catch (e) {
-            await AsyncStorage.removeItem('saved_point');
-          }
+          setSavedLocation(JSON.parse(stored));
         }
 
         let { status: perm } = await Location.requestForegroundPermissionsAsync();
@@ -40,38 +37,45 @@ export default function App() {
           return;
         }
 
-        // Iň ýokary takyklyk: 3-5 metr aralygy saklamak üçin
-        await Location.watchPositionAsync(
+        locationSubscription.current = await Location.watchPositionAsync(
           { 
-            accuracy: Location.Accuracy.Highest, 
-            distanceInterval: 3 
+            accuracy: Location.Accuracy.High, 
+            distanceInterval: 5, 
+            timeInterval: 10000 
           },
           (newLoc) => {
-            setLocation(newLoc.coords);
-            setStatus("Taýýar");
+            if (newLoc.coords) {
+              setLocation(newLoc.coords);
+              setStatus("Taýýar");
+            }
           }
         );
-
       } catch (e) {
         setStatus("Sistem hatasy");
       }
     }
 
     setupApp();
-    return () => unsubscribe();
+
+    return () => {
+      unsubscribeNet();
+      if (locationSubscription.current) {
+        locationSubscription.current.remove();
+      }
+    };
   }, []);
 
-  // SENIŇ SMS LINKIŇ - ÜÝTGEDILMEDI
   const handleShareLocation = async () => {
     if (!location) {
       Alert.alert("Garaşyň", "GPS entek anyklanmady.");
       return;
     }
+    
     setLoading(true);
     try {
-      // Seniň original formatyň: Maps.google.com/?q=LAT,LON
-      const mapLink = `Maps.google.com/?q=${location.latitude},${location.longitude}`;
-      const message = "YOLBELET: Menin yerim: " + mapLink;
+      // Siziň tassyklan durnukly formatyňyz
+        const mapLink = `Maps.google.com/?q=${location.latitude},${location.longitude}`;
+      const message = `YOLBELET: Menin yerim: ${mapLink}`;
       
       const isSms = await SMS.isAvailableAsync();
       if (isSms) {
@@ -87,14 +91,11 @@ export default function App() {
   };
 
   const handleSavePoint = async () => {
-    if (!location?.latitude) {
-      Alert.alert("Hata", "GPS koordinatasy tapylmady.");
-      return;
-    }
+    if (!location) return;
     try {
-      const pointToSave = { latitude: location.latitude, longitude: location.longitude };
-      await AsyncStorage.setItem('saved_point', JSON.stringify(pointToSave));
-      setSavedLocation(pointToSave);
+      const pt = { latitude: location.latitude, longitude: location.longitude };
+      await AsyncStorage.setItem('saved_point', JSON.stringify(pt));
+      setSavedLocation(pt);
       Alert.alert("Ýolbelet", "Duran ýeriňiz ýatda saklandy.");
     } catch (e) {
       Alert.alert("Hata", "Ýatda saklap bolmady.");
@@ -102,13 +103,14 @@ export default function App() {
   };
 
   const handleNavigate = async () => {
-    if (!savedLocation || !location) return;
-    const url = `http://maps.google.com/maps?saddr=${location.latitude},${location.longitude}&daddr=${savedLocation.latitude},${savedLocation.longitude}&directionsmode=walking`;
-    const supported = await Linking.canOpenURL(url);
-    if (supported) {
+    if (!savedLocation) return;
+    // Yzyna ýol görkezmek üçin iň dogry Google Maps URL
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${savedLocation.latitude},${savedLocation.longitude}&travelmode=walking`;
+    
+    try {
       await Linking.openURL(url);
-    } else {
-      Alert.alert("Hata", "Ugur görkeziji tapylmady.");
+    } catch (e) {
+      Alert.alert("Hata", "Google Maps açylmady.");
     }
   };
 
@@ -119,53 +121,59 @@ export default function App() {
       <View style={styles.header}>
         <View>
           <Text style={[styles.title, { color: isDarkMode ? '#FFF' : '#1D3557' }]}>📍 ÝOLBELET</Text>
-          <Text style={styles.v}>v2.8 Professional</Text>
+          <Text style={styles.v}>v2.8 SDK 52</Text>
         </View>
         <View style={[styles.badge, { backgroundColor: isConnected ? '#2A9D8F' : '#E63946' }]}>
           <Text style={styles.badgeText}>{isConnected ? "Online" : "Offline"}</Text>
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.mapBox}>
-          <MapView
-            ref={mapRef}
-            style={styles.map}
-            mapType="none" 
-            showsUserLocation={true}
-            initialRegion={{
-              latitude: location?.latitude || 37.95,
-              longitude: location?.longitude || 58.38,
-              latitudeDelta: 0.005,
-              longitudeDelta: 0.005,
-            }}
-          >
-            <UrlTile 
-              urlTemplate="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-              maximumZ={19}
-              tileSize={256}
-              shouldReplaceMapContent={true} 
-            />
-            {savedLocation && <Marker coordinate={savedLocation} pinColor="red" />}
-          </MapView>
+          {location ? (
+            <MapView
+              ref={mapRef}
+              style={styles.map}
+              showsUserLocation={true}
+              initialRegion={{
+                latitude: location.latitude,
+                longitude: location.longitude,
+                latitudeDelta: 0.005,
+                longitudeDelta: 0.005,
+              }}
+            >
+              <UrlTile 
+                urlTemplate="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                maximumZ={19}
+              />
+              {savedLocation && <Marker coordinate={savedLocation} pinColor="red" />}
+            </MapView>
+          ) : (
+            <View style={styles.mapWait}>
+              <ActivityIndicator color="#FFF" size="large" />
+              <Text style={{color:'#FFF', marginTop:10}}>GPS Garaşylýar...</Text>
+            </View>
+          )}
         </View>
 
         <View style={styles.btns}>
-          {loading ? <ActivityIndicator size="large" color="#E63946" /> : (
+          {loading ? (
+            <ActivityIndicator size="large" color="#E63946" style={{marginVertical: 20}} />
+          ) : (
             <>
-              <TouchableOpacity style={styles.btn1} onPress={handleShareLocation} activeOpacity={0.8}>
+              <TouchableOpacity activeOpacity={0.8} style={styles.btn1} onPress={handleShareLocation}>
                 <Text style={styles.btnT}>📍 ÝERİMİ UGRAT (SMS)</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.btn2} onPress={handleSavePoint} activeOpacity={0.8}>
+              <TouchableOpacity activeOpacity={0.8} style={styles.btn2} onPress={handleSavePoint}>
                 <Text style={styles.btnT}>💾 NOKADY ÝATDA SAKLA</Text>
               </TouchableOpacity>
 
               <TouchableOpacity 
+                activeOpacity={0.8}
                 style={[styles.btn3, { opacity: savedLocation ? 1 : 0.4 }]} 
                 onPress={handleNavigate}
                 disabled={!savedLocation}
-                activeOpacity={0.8}
               >
                 <Text style={styles.btn3T}>🔙 YZYNA ÝOL GÖRKEZ</Text>
               </TouchableOpacity>
@@ -176,10 +184,10 @@ export default function App() {
         <View style={[styles.card, { backgroundColor: isDarkMode ? '#1E1E1E' : '#FFF' }]}>
           <Text style={[styles.cT, { color: isDarkMode ? '#A8DADC' : '#457B9D' }]}>Düzüji: Meñli Aşyrowa</Text>
           <Text style={[styles.cB, { color: isDarkMode ? '#BBB' : '#666' }]}>
-             Bu programmany öz ýerleşýän ýeriňizi çalt sms arkaly ugradyp bilmegiňiz üçin we nätänyş ýerlerde azaşmazlygyňyz üçin döretdim
+              Bu programmany öz ýerleşýän ýeriňizi çalt sms arkaly ugradyp bilmegiňiz üçin we nätänyş ýerlerde azaşmazlygyňyz üçin döretdim
           </Text>
         </View>
-        <Text style={styles.foot}>© 2026 Ýolbelet | {status}</Text>
+        <Text style={styles.foot}>© 2026 Ýolbelet | Status: {status}</Text>
       </ScrollView>
     </View>
   );
@@ -187,14 +195,15 @@ export default function App() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { paddingTop: 60, paddingBottom: 20, paddingHorizontal: 25, flexDirection: 'row', justifyContent: 'space-between' },
-  title: { fontSize: 28, fontWeight: '900' },
+  header: { paddingTop: 60, paddingBottom: 15, paddingHorizontal: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  title: { fontSize: 24, fontWeight: '900' },
   v: { fontSize: 10, color: '#999' },
-  badge: { paddingHorizontal: 12, paddingVertical: 4, borderRadius: 20, alignSelf: 'center' },
+  badge: { paddingHorizontal: 10, paddingVertical: 2, borderRadius: 10 },
   badgeText: { color: '#FFF', fontSize: 10, fontWeight: 'bold' },
-  scroll: { paddingHorizontal: 20, paddingBottom: 40 },
-  mapBox: { height: 350, borderRadius: 25, overflow: 'hidden', elevation: 10, backgroundColor: '#000', marginBottom: 20 },
+  scroll: { paddingHorizontal: 15, paddingBottom: 40 },
+  mapBox: { height: 320, borderRadius: 25, overflow: 'hidden', backgroundColor: '#333', marginBottom: 20 },
   map: { flex: 1 },
+  mapWait: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   btns: { marginBottom: 10 },
   btn1: { backgroundColor: '#E63946', padding: 18, borderRadius: 15, alignItems: 'center', marginBottom: 12 },
   btn2: { backgroundColor: '#1D3557', padding: 18, borderRadius: 15, alignItems: 'center', marginBottom: 12 },
@@ -202,7 +211,7 @@ const styles = StyleSheet.create({
   btnT: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
   btn3T: { color: '#457B9D', fontSize: 16, fontWeight: 'bold' },
   card: { borderRadius: 20, padding: 20, marginTop: 10 },
-  cT: { fontSize: 16, fontWeight: 'bold', marginBottom: 5 },
-  cB: { fontSize: 13, lineHeight: 18 },
-  foot: { textAlign: 'center', marginTop: 30, color: '#999', fontSize: 11 }
+  cT: { fontSize: 15, fontWeight: 'bold', marginBottom: 5 },
+  cB: { fontSize: 13, lineHeight: 20 },
+  foot: { textAlign: 'center', marginTop: 25, color: '#999', fontSize: 11 }
 });
