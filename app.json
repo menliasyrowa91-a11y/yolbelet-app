@@ -13,6 +13,11 @@
     },
     "android": {
       "package": "com.menli.yolbelet",
+      "config": {
+        "googleMaps": {
+          "apiKey": ""
+        }
+      },
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
@@ -26,6 +31,11 @@
           "locationAlwaysPermission": "GPS rugsady gerek."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": null
+      }
+    }
   }
 }
