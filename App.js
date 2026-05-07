@@ -1,217 +1,194 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  StyleSheet, Text, View, TouchableOpacity, Alert, Share, 
-  ActivityIndicator, ScrollView, StatusBar, Linking, useColorScheme 
-} from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, TextInput, Alert, Linking, ActivityIndicator } from 'react-native';
+import MapView, { Marker, UrlTile, PROVIDER_DEFAULT } from 'react-native-maps';
 import * as Location from 'expo-location';
-import * as SMS from 'expo-sms';
-import MapView, { UrlTile, Marker } from 'react-native-maps';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import NetInfo from '@react-native-community/netinfo';
 
 export default function App() {
-  const isDarkMode = useColorScheme() === 'dark';
-  const [loading, setLoading] = useState(false);
-  const [isConnected, setIsConnected] = useState(true);
   const [location, setLocation] = useState(null);
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [savedLocation, setSavedLocation] = useState(null);
-  const [status, setStatus] = useState("Garaşylýar...");
+  const [errorMsg, setErrorMsg] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
   const mapRef = useRef(null);
-  const locationSubscription = useRef(null);
 
+  // 1. GPS we Nomeri Yüklemek
   useEffect(() => {
-    const unsubscribeNet = NetInfo.addEventListener(state => {
-      setIsConnected(state.isConnected ?? true);
-    });
-
-    async function setupApp() {
+    (async () => {
       try {
-        const stored = await AsyncStorage.getItem('saved_point');
-        if (stored) {
-          setSavedLocation(JSON.parse(stored));
-        }
+        // Nomeri we saklanan nokatlary ýükle
+        const storedPhone = await AsyncStorage.getItem('phoneNumber');
+        if (storedPhone) setPhoneNumber(storedPhone);
 
-        let { status: perm } = await Location.requestForegroundPermissionsAsync();
-        if (perm !== 'granted') {
-          setStatus("GPS Rugsady ýok");
+        const storedLocation = await AsyncStorage.getItem('savedLocation');
+        if (storedLocation) setSavedLocation(JSON.parse(storedLocation));
+
+        // GPS Rugsadyny soramak
+        let { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          setErrorMsg('GPS rugsady berilmedi');
+          setIsLoading(false);
           return;
         }
 
-        locationSubscription.current = await Location.watchPositionAsync(
-          { 
-            accuracy: Location.Accuracy.High, 
-            distanceInterval: 5, 
-            timeInterval: 10000 
+        // Iň takyk koordinatany alarys (3-5 metr takyklyk üçin)
+        let loc = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.BestForNavigation,
+        });
+        setLocation(loc);
+        setIsLoading(false);
+
+        // Real-wagtda yzarlamak
+        Location.watchPositionAsync(
+          {
+            accuracy: Location.Accuracy.BestForNavigation,
+            timeInterval: 3000,
+            distanceInterval: 1,
           },
           (newLoc) => {
-            if (newLoc.coords) {
-              setLocation(newLoc.coords);
-              setStatus("Taýýar");
-            }
+            setLocation(newLoc);
           }
         );
       } catch (e) {
-        setStatus("Sistem hatasy");
+        console.log(e);
+        setIsLoading(false);
       }
-    }
-
-    setupApp();
-
-    return () => {
-      unsubscribeNet();
-      if (locationSubscription.current) {
-        locationSubscription.current.remove();
-      }
-    };
+    })();
   }, []);
 
-  const handleShareLocation = async () => {
+  // 2. Nomeri Saklamak
+  const handlePhoneChange = async (text) => {
+    setPhoneNumber(text);
+    await AsyncStorage.setItem('phoneNumber', text);
+  };
+
+  // 3. Nokady Yatda Saklamak
+  const savePoint = async () => {
+    if (location) {
+      const point = {
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+      };
+      setSavedLocation(point);
+      await AsyncStorage.setItem('savedLocation', JSON.stringify(point));
+      Alert.alert("Üstünlikli", "Nokat ýatda saklandy!");
+    }
+  };
+
+  // 4. SMS Ugratmak (Seniň formatyňda)
+  const sendSMS = () => {
     if (!location) {
       Alert.alert("Garaşyň", "GPS entek anyklanmady.");
       return;
     }
-    
-    setLoading(true);
-    try {
-      // Siziň tassyklan durnukly formatyňyz
-        const mapLink = `Maps.google.com/?q=${location.latitude},${location.longitude}`;
+
+    if (phoneNumber.length < 8) {
+      Alert.alert("Ýalňyşlyk", "Dogry telefon nomerini ýazyň.");
+      return;
+    }
+
+    // Google Maps formaty (Seniň tassyklan formatyň)
+     const mapLink = `Maps.google.com/?q=${location.latitude},${location.longitude}`;
       const message = `YOLBELET: Menin yerim: ${mapLink}`;
-      
-      const isSms = await SMS.isAvailableAsync();
-      if (isSms) {
-        await SMS.sendSMSAsync([], message);
-      } else {
-        await Share.share({ message });
-      }
-    } catch (e) {
-      Alert.alert("Hata", "Paýlaşyp bolmady.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSavePoint = async () => {
-    if (!location) return;
-    try {
-      const pt = { latitude: location.latitude, longitude: location.longitude };
-      await AsyncStorage.setItem('saved_point', JSON.stringify(pt));
-      setSavedLocation(pt);
-      Alert.alert("Ýolbelet", "Duran ýeriňiz ýatda saklandy.");
-    } catch (e) {
-      Alert.alert("Hata", "Ýatda saklap bolmady.");
-    }
-  };
-
-  const handleNavigate = async () => {
-    if (!savedLocation) return;
-    // Yzyna ýol görkezmek üçin iň dogry Google Maps URL
-    const url = `https://www.google.com/maps/dir/?api=1&destination=${savedLocation.latitude},${savedLocation.longitude}&travelmode=walking`;
     
-    try {
-      await Linking.openURL(url);
-    } catch (e) {
-      Alert.alert("Hata", "Google Maps açylmady.");
+    // Nomeriň başyny barlamak (+993 ýa-da 8)
+    let finalPhone = phoneNumber;
+    if (!phoneNumber.startsWith('+') && !phoneNumber.startsWith('8')) {
+      finalPhone = `+993${phoneNumber}`;
+    }
+
+    const url = `sms:${finalPhone}?body=${encodeURIComponent(message)}`;
+    Linking.openURL(url);
+  };
+
+  // 5. Saklanan Nokada Gaýdyp barmak
+  const goToPoint = () => {
+    if (savedLocation && mapRef.current) {
+      mapRef.current.animateToRegion({
+        ...savedLocation,
+        latitudeDelta: 0.005,
+        longitudeDelta: 0.005,
+      }, 1000);
+    } else {
+      Alert.alert("Nokat ýok", "Ilki nokat ýatda saklaň.");
     }
   };
+
+  if (isLoading) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color="#0000ff" />
+        <Text>GPS anyklanýar...</Text>
+      </View>
+    );
+  }
 
   return (
-    <View style={[styles.container, { backgroundColor: isDarkMode ? '#121212' : '#F5F5F5' }]}>
-      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} />
-      
-      <View style={styles.header}>
-        <View>
-          <Text style={[styles.title, { color: isDarkMode ? '#FFF' : '#1D3557' }]}>📍 ÝOLBELET</Text>
-          <Text style={styles.v}>v2.8 SDK 52</Text>
+    <View style={styles.container}>
+      <MapView
+        ref={mapRef}
+        style={styles.map}
+        provider={PROVIDER_DEFAULT}
+        initialRegion={{
+          latitude: location?.coords?.latitude || 37.95,
+          longitude: location?.coords?.longitude || 58.38,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        }}
+        showsUserLocation={true}
+        showsMyLocationButton={true}
+      >
+        {/* ArcGIS Offline Keş üçin Kafel (Tile) ulgamy */}
+        <UrlTile
+          urlTemplate="https://services.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}"
+          maximumZ={19}
+          flipY={false}
+        />
+        
+        {savedLocation && (
+          <Marker coordinate={savedLocation} pinColor="blue" title="Saklanan nokat" />
+        )}
+      </MapView>
+
+      <View style={styles.overlay}>
+        <TextInput
+          style={styles.input}
+          placeholder="Nomer (8... ýa-da +993...)"
+          keyboardType="phone-pad"
+          value={phoneNumber}
+          onChangeText={handlePhoneChange}
+        />
+        
+        <View style={styles.buttonRow}>
+          <TouchableOpacity style={styles.btn} onPress={savePoint}>
+            <Text style={styles.btnText}>Nokat Ýatda Sakla</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={[styles.btn, styles.smsBtn]} onPress={sendSMS}>
+            <Text style={styles.btnText}>SMS Ugrat</Text>
+          </TouchableOpacity>
         </View>
-        <View style={[styles.badge, { backgroundColor: isConnected ? '#2A9D8F' : '#E63946' }]}>
-          <Text style={styles.badgeText}>{isConnected ? "Online" : "Offline"}</Text>
-        </View>
+
+        <TouchableOpacity style={[styles.btn, styles.goBtn]} onPress={goToPoint}>
+          <Text style={styles.btnText}>Saklanan Nokada Bar</Text>
+        </TouchableOpacity>
+
+        {errorMsg && <Text style={styles.errorText}>{errorMsg}</Text>}
       </View>
-
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <View style={styles.mapBox}>
-          {location ? (
-            <MapView
-              ref={mapRef}
-              style={styles.map}
-              showsUserLocation={true}
-              initialRegion={{
-                latitude: location.latitude,
-                longitude: location.longitude,
-                latitudeDelta: 0.005,
-                longitudeDelta: 0.005,
-              }}
-            >
-              <UrlTile 
-                urlTemplate="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-                maximumZ={19}
-              />
-              {savedLocation && <Marker coordinate={savedLocation} pinColor="red" />}
-            </MapView>
-          ) : (
-            <View style={styles.mapWait}>
-              <ActivityIndicator color="#FFF" size="large" />
-              <Text style={{color:'#FFF', marginTop:10}}>GPS Garaşylýar...</Text>
-            </View>
-          )}
-        </View>
-
-        <View style={styles.btns}>
-          {loading ? (
-            <ActivityIndicator size="large" color="#E63946" style={{marginVertical: 20}} />
-          ) : (
-            <>
-              <TouchableOpacity activeOpacity={0.8} style={styles.btn1} onPress={handleShareLocation}>
-                <Text style={styles.btnT}>📍 ÝERİMİ UGRAT (SMS)</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity activeOpacity={0.8} style={styles.btn2} onPress={handleSavePoint}>
-                <Text style={styles.btnT}>💾 NOKADY ÝATDA SAKLA</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity 
-                activeOpacity={0.8}
-                style={[styles.btn3, { opacity: savedLocation ? 1 : 0.4 }]} 
-                onPress={handleNavigate}
-                disabled={!savedLocation}
-              >
-                <Text style={styles.btn3T}>🔙 YZYNA ÝOL GÖRKEZ</Text>
-              </TouchableOpacity>
-            </>
-          )}
-        </View>
-
-        <View style={[styles.card, { backgroundColor: isDarkMode ? '#1E1E1E' : '#FFF' }]}>
-          <Text style={[styles.cT, { color: isDarkMode ? '#A8DADC' : '#457B9D' }]}>Düzüji: Meñli Aşyrowa</Text>
-          <Text style={[styles.cB, { color: isDarkMode ? '#BBB' : '#666' }]}>
-              Bu programmany öz ýerleşýän ýeriňizi çalt sms arkaly ugradyp bilmegiňiz üçin we nätänyş ýerlerde azaşmazlygyňyz üçin döretdim
-          </Text>
-        </View>
-        <Text style={styles.foot}>© 2026 Ýolbelet | Status: {status}</Text>
-      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  header: { paddingTop: 60, paddingBottom: 15, paddingHorizontal: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  title: { fontSize: 24, fontWeight: '900' },
-  v: { fontSize: 10, color: '#999' },
-  badge: { paddingHorizontal: 10, paddingVertical: 2, borderRadius: 10 },
-  badgeText: { color: '#FFF', fontSize: 10, fontWeight: 'bold' },
-  scroll: { paddingHorizontal: 15, paddingBottom: 40 },
-  mapBox: { height: 320, borderRadius: 25, overflow: 'hidden', backgroundColor: '#333', marginBottom: 20 },
-  map: { flex: 1 },
-  mapWait: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  btns: { marginBottom: 10 },
-  btn1: { backgroundColor: '#E63946', padding: 18, borderRadius: 15, alignItems: 'center', marginBottom: 12 },
-  btn2: { backgroundColor: '#1D3557', padding: 18, borderRadius: 15, alignItems: 'center', marginBottom: 12 },
-  btn3: { padding: 18, borderRadius: 15, alignItems: 'center', borderWidth: 2, borderColor: '#457B9D' },
-  btnT: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
-  btn3T: { color: '#457B9D', fontSize: 16, fontWeight: 'bold' },
-  card: { borderRadius: 20, padding: 20, marginTop: 10 },
-  cT: { fontSize: 15, fontWeight: 'bold', marginBottom: 5 },
-  cB: { fontSize: 13, lineHeight: 20 },
-  foot: { textAlign: 'center', marginTop: 25, color: '#999', fontSize: 11 }
+  container: { flex: 1, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
+  map: { width: '100%', height: '100%' },
+  overlay: { position: 'absolute', bottom: 40, backgroundColor: 'rgba(255,255,255,0.9)', padding: 15, width: '90%', borderRadius: 15, elevation: 5 },
+  input: { borderBottomWidth: 1, marginBottom: 15, padding: 8, fontSize: 16 },
+  buttonRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
+  btn: { backgroundColor: '#4CAF50', padding: 12, borderRadius: 8, flex: 0.48, alignItems: 'center' },
+  smsBtn: { backgroundColor: '#2196F3' },
+  goBtn: { backgroundColor: '#FF9800', width: '100%', flex: 0 },
+  btnText: { color: '#fff', fontWeight: 'bold' },
+  errorText: { color: 'red', textAlign: 'center', marginTop: 10 }
 });
