@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import * as Location from 'expo-location';
 import * as SMS from 'expo-sms';
-import MapView, { UrlTile, Marker, PROVIDER_DEFAULT } from 'react-native-maps';
+import MapView, { UrlTile, Marker } from 'react-native-maps';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
 
@@ -25,26 +25,27 @@ export default function App() {
 
     async function setupApp() {
       try {
-        // 1. AsyncStorage Krash Goragy
         const stored = await AsyncStorage.getItem('saved_point');
         if (stored) {
           try {
             setSavedLocation(JSON.parse(stored));
-          } catch (parseError) {
+          } catch (e) {
             await AsyncStorage.removeItem('saved_point');
           }
         }
 
-        // 2. GPS Rugsatlary we Takyklyk (Highest - 3-5 metr üçin)
         let { status: perm } = await Location.requestForegroundPermissionsAsync();
         if (perm !== 'granted') {
           setStatus("GPS Rugsady ýok");
           return;
         }
 
-        // Location watcher: Ýer üýtgände kartany awtomatiki täzeleýär
+        // Iň ýokary takyklyk: 3-5 metr aralygy saklamak üçin
         await Location.watchPositionAsync(
-          { accuracy: Location.Accuracy.Highest, distanceInterval: 5 },
+          { 
+            accuracy: Location.Accuracy.Highest, 
+            distanceInterval: 3 
+          },
           (newLoc) => {
             setLocation(newLoc.coords);
             setStatus("Taýýar");
@@ -52,7 +53,6 @@ export default function App() {
         );
 
       } catch (e) {
-        console.error("Başlangyç hatasy:", e);
         setStatus("Sistem hatasy");
       }
     }
@@ -61,14 +61,15 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  // SMS Link formatyňyzy saklap, ýerleşýän ýeri paýlaşmak
+  // SENIŇ SMS LINKIŇ - ÜÝTGEDILMEDI
   const handleShareLocation = async () => {
     if (!location) {
-      Alert.alert("Garaşyň", "GPS entek anyklanmady. Biraz açyk asmanda garaşyň.");
+      Alert.alert("Garaşyň", "GPS entek anyklanmady.");
       return;
     }
     setLoading(true);
     try {
+      // Seniň original formatyň: Maps.google.com/?q=LAT,LON
       const mapLink = `Maps.google.com/?q=${location.latitude},${location.longitude}`;
       const message = "YOLBELET: Menin yerim: " + mapLink;
       
@@ -85,42 +86,29 @@ export default function App() {
     }
   };
 
-  // Nokady ýatda sakla - Dublikat barlagly we Krash goragly
   const handleSavePoint = async () => {
     if (!location?.latitude) {
-      Alert.alert("Hata", "Häzirki GPS koordinatasy ýok.");
+      Alert.alert("Hata", "GPS koordinatasy tapylmady.");
       return;
     }
-    
     try {
-      const pointToSave = {
-        latitude: location.latitude,
-        longitude: location.longitude,
-      };
-      
+      const pointToSave = { latitude: location.latitude, longitude: location.longitude };
       await AsyncStorage.setItem('saved_point', JSON.stringify(pointToSave));
       setSavedLocation(pointToSave);
-      setStatus("Nokat ýatda saklandy");
       Alert.alert("Ýolbelet", "Duran ýeriňiz ýatda saklandy.");
     } catch (e) {
-      Alert.alert("Hata", "Maglumat ýazylmady.");
+      Alert.alert("Hata", "Ýatda saklap bolmady.");
     }
   };
 
-  // Yzyna ýol görkez - Linking Error Handling bilen
   const handleNavigate = async () => {
     if (!savedLocation || !location) return;
     const url = `http://maps.google.com/maps?saddr=${location.latitude},${location.longitude}&daddr=${savedLocation.latitude},${savedLocation.longitude}&directionsmode=walking`;
-    
-    try {
-      const canOpen = await Linking.canOpenURL(url);
-      if (canOpen) {
-        await Linking.openURL(url);
-      } else {
-        Alert.alert("Hata", "Siziň telefonyňyzda ugur görkeziji programma tapylmady.");
-      }
-    } catch (e) {
-      Alert.alert("Hata", "Navigasiýa açylmady.");
+    const supported = await Linking.canOpenURL(url);
+    if (supported) {
+      await Linking.openURL(url);
+    } else {
+      Alert.alert("Hata", "Ugur görkeziji tapylmady.");
     }
   };
 
@@ -143,14 +131,12 @@ export default function App() {
           <MapView
             ref={mapRef}
             style={styles.map}
-            provider={PROVIDER_DEFAULT}
             mapType="none" 
             showsUserLocation={true}
-            showsMyLocationButton={true}
             initialRegion={{
               latitude: location?.latitude || 37.95,
               longitude: location?.longitude || 58.38,
-              latitudeDelta: 0.005, // Has ýakyn görünüş
+              latitudeDelta: 0.005,
               longitudeDelta: 0.005,
             }}
           >
@@ -160,13 +146,7 @@ export default function App() {
               tileSize={256}
               shouldReplaceMapContent={true} 
             />
-            {savedLocation && (
-              <Marker 
-                coordinate={savedLocation} 
-                pinColor="red" 
-                title="Ýatda saklanan ýer"
-              />
-            )}
+            {savedLocation && <Marker coordinate={savedLocation} pinColor="red" />}
           </MapView>
         </View>
 
@@ -194,12 +174,12 @@ export default function App() {
         </View>
 
         <View style={[styles.card, { backgroundColor: isDarkMode ? '#1E1E1E' : '#FFF' }]}>
-          <Text style={[styles.cT, { color: isDarkMode ? '#A8DADC' : '#457B9D' }]}>Düzüji: Meñli Aşyrowa Altyýewna</Text>
+          <Text style={[styles.cT, { color: isDarkMode ? '#A8DADC' : '#457B9D' }]}>Düzüji: Meñli Aşyrowa</Text>
           <Text style={[styles.cB, { color: isDarkMode ? '#BBB' : '#666' }]}>
-             Bu programmany öz ýerleşýän ýeriňizi çalt sms arkaly ugradyp bilmegiňiz üçin we nätänyş ýerlerde azaşmazlygyňyz üçin döretdim.
+             Bu programmany öz ýerleşýän ýeriňizi çalt sms arkaly ugradyp bilmegiňiz üçin we nätänyş ýerlerde azaşmazlygyňyz üçin döretdim
           </Text>
         </View>
-        <Text style={styles.foot}>© 2026 Ýolbelet | Status: {status}</Text>
+        <Text style={styles.foot}>© 2026 Ýolbelet | {status}</Text>
       </ScrollView>
     </View>
   );
