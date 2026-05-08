@@ -15,16 +15,17 @@ export default function App() {
     checkMemory();
   }, []);
 
-  // ÝAT BARLAGY: Ulanyja akylly duýduryş bermek üçin
   const checkMemory = async () => {
-    const free = await FileSystem.getFreeDiskStorageAsync();
-    const mb = Math.round(free / (1024 * 1024));
-    // 100MB-dan köp bolsa 2-4 hepde saklap bilýär
-    const days = mb > 100 ? "3-4 hepde" : "1 hepde";
-    setStorageNote(`Ýat: ${mb}MB boş. Karta keşleri ${days} saklanar.`);
+    try {
+      const free = await FileSystem.getFreeDiskStorageAsync();
+      const mb = Math.round(free / (1024 * 1024));
+      const days = mb > 100 ? "3-4 hepde" : "1 hepde";
+      setStorageNote(`Ýat: ${mb}MB boş. Karta keşleri ${days} saklanar.`);
+    } catch (e) {
+      setStorageNote("Ýat maglumaty alynmady.");
+    }
   };
 
-  // SMS WE PAÝLAŞMAK (Seniň formatyň durnukly saklandy)
   const shareLocation = async () => {
     setLoading(true);
     setStatus("Ýerleşýän ýeriňiz anyklanýar...");
@@ -38,13 +39,11 @@ export default function App() {
       let location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
       const { latitude, longitude } = location.coords;
       
-      // SIZIŇ ÜÝTGEMELI DÄL FORMATYŇYZ:
       const mapUrl = `Maps.google.com/?q=${latitude},${longitude}`;
       const messageBody = "YOLBELET: Menin yerim: " + mapUrl;
 
       const isAvailable = await SMS.isAvailableAsync();
       if (isAvailable) {
-        // Nomer formaty islendik görnüşde bolup biler (8, +993, we s.m.)
         await SMS.sendSMSAsync([], messageBody); 
         setStatus("SMS taýýarlandy");
       } else {
@@ -52,13 +51,12 @@ export default function App() {
         setStatus("Paýlaşyldy");
       }
     } catch (error) {
-      Alert.alert("Krash barlagy", "GPS maglumaty alynmady. Äpişge ýakynyna geçiň.");
+      Alert.alert("Krash barlagy", "GPS maglumaty alynmady.");
     } finally {
       setLoading(false);
     }
   };
 
-  // A NOKADY SAKLAMAK
   const savePointA = async () => {
     setLoading(true);
     try {
@@ -73,9 +71,10 @@ export default function App() {
 
   return (
     <View style={styles.container}>
-      {/* KARTA BÖLÜMI (Offline durnuklylyk üçin) */}
       <MapView
         style={styles.map}
+        provider={null} 
+        mapType="none" 
         initialRegion={{
           latitude: 37.95,
           longitude: 58.38,
@@ -87,6 +86,7 @@ export default function App() {
         <UrlTile 
           urlTemplate="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
           maximumZ={19}
+          flipY={false}
         />
         {savedLocation && <Marker coordinate={savedLocation} title="A Nokady" />}
       </MapView>
@@ -99,7 +99,7 @@ export default function App() {
           <Text style={styles.helpTitle}>Funksiýalar barada:</Text>
           <Text style={styles.helpTxt}>✅ **Ýerimi ugrat:** GPS koordinatyňyzy SMS formatynda paýlaşar.</Text>
           <Text style={styles.helpTxt}>✅ **Nokady sakla:** Başlangyç (A) nokadyňyzy telefonyň ýadyna ýazar.</Text>
-          <Text style={styles.helpTxt}>✅ **Yzyna ýol:** Internet bar bolsa Google Maps, ýok bolsa offline keşden peýdalanar.</Text>
+          <Text style={styles.helpTxt}>✅ **Yzyna ýol:** Internet bar wagty Google Maps, ýok bolsa offline keşden peýdalanar.</Text>
         </View>
 
         {loading ? (
@@ -118,7 +118,7 @@ export default function App() {
               style={[styles.btnBlue, {opacity: savedLocation ? 1 : 0.5}]}
               onPress={() => {
                 if(savedLocation) {
-                  const url = `http://maps.google.com/maps?daddr=${savedLocation.latitude},${savedLocation.longitude}`;
+                  const url = `https://Maps.google.com/?q=${savedLocation.latitude},${savedLocation.longitude}`;
                   Linking.openURL(url);
                 }
               }}
