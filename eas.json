@@ -5,14 +5,18 @@
       "distribution": "internal"
     },
     "preview": {
+      "distribution": "internal",
       "android": {
         "buildType": "apk"
-      }
+      },
+      "channel": "preview"
     },
     "production": {
+      "distribution": "store",
       "android": {
         "buildType": "apk"
-      }
+      },
+      "channel": "production"
     }
   }
 }
