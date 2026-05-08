@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Alert, Share, ActivityIndicator, ScrollView, Linking } from 'react-native';
-import MapView, { Marker, UrlTile } from 'react-native-maps';
+import MapView, { Marker, UrlTile, PROVIDER_GOOGLE } from 'react-native-maps';
 import * as Location from 'expo-location';
 import * as SMS from 'expo-sms';
 import * as FileSystem from 'expo-file-system';
@@ -36,10 +36,11 @@ export default function App() {
         return;
       }
 
-      let location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+      // "High" ýerine "Balanced" ulanmak has çalt we durnukly netije berýär
+      let location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
       const { latitude, longitude } = location.coords;
       
-      const mapUrl = `Maps.google.com/?q=${latitude},${longitude}`;
+      const mapUrl = `https://Maps.google.com/?q=${latitude},${longitude}`;
       const messageBody = "YOLBELET: Menin yerim: " + mapUrl;
 
       const isAvailable = await SMS.isAvailableAsync();
@@ -51,7 +52,7 @@ export default function App() {
         setStatus("Paýlaşyldy");
       }
     } catch (error) {
-      Alert.alert("Krash barlagy", "GPS maglumaty alynmady.");
+      Alert.alert("GPS Hatasy", "Ýerleşýän ýeriňizi anyklap bolmady. GPS-iňiz açykmy?");
     } finally {
       setLoading(false);
     }
@@ -60,9 +61,9 @@ export default function App() {
   const savePointA = async () => {
     setLoading(true);
     try {
-      let loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+      let loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
       setSavedLocation(loc.coords);
-      Alert.alert("Üstünlikli", "Başlangyç nokat ýatda saklandy!");
+      Alert.alert("Üstünlikli", "A nokady (başlangyç) ýatda saklandy!");
       setStatus("A nokady saklandy");
     } catch (e) {
       Alert.alert("Hata", "Nokady saklap bolmady.");
@@ -73,22 +74,21 @@ export default function App() {
     <View style={styles.container}>
       <MapView
         style={styles.map}
-        provider={null} 
-        mapType="none" 
+        provider={PROVIDER_GOOGLE} 
         initialRegion={{
           latitude: 37.95,
           longitude: 58.38,
-          latitudeDelta: 0.05,
-          longitudeDelta: 0.05,
+          latitudeDelta: 0.1,
+          longitudeDelta: 0.1,
         }}
         showsUserLocation={true}
+        showsMyLocationButton={true}
       >
         <UrlTile 
           urlTemplate="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
           maximumZ={19}
-          flipY={false}
         />
-        {savedLocation && <Marker coordinate={savedLocation} title="A Nokady" />}
+        {savedLocation && <Marker coordinate={savedLocation} title="A Nokady" pinColor="blue" />}
       </MapView>
 
       <ScrollView style={styles.content}>
@@ -96,10 +96,9 @@ export default function App() {
         <Text style={styles.memoryText}>{storageNote}</Text>
 
         <View style={styles.helpCard}>
-          <Text style={styles.helpTitle}>Funksiýalar barada:</Text>
-          <Text style={styles.helpTxt}>✅ **Ýerimi ugrat:** GPS koordinatyňyzy SMS formatynda paýlaşar.</Text>
-          <Text style={styles.helpTxt}>✅ **Nokady sakla:** Başlangyç (A) nokadyňyzy telefonyň ýadyna ýazar.</Text>
-          <Text style={styles.helpTxt}>✅ **Yzyna ýol:** Internet bar wagty Google Maps, ýok bolsa offline keşden peýdalanar.</Text>
+          <Text style={styles.helpTitle}>Maglumat:</Text>
+          <Text style={styles.helpTxt}>• Ýerimi ugrat: GPS koordinatyňyzy paýlaşar.</Text>
+          <Text style={styles.helpTxt}>• Nokady sakla: Häzirki ýeriňizi "A nokady" hökmünde ýatda saklar.</Text>
         </View>
 
         {loading ? (
@@ -129,7 +128,7 @@ export default function App() {
           </View>
         )}
         <Text style={styles.status}>{status}</Text>
-        <Text style={styles.footer}>© 2026 Düzüji: Aşyrowa Meňli Altyýewna</Text>
+        <Text style={styles.footer}>© 2026 Düzüji: Meňli Aşyrowa</Text>
       </ScrollView>
     </View>
   );
