@@ -1,41 +1,32 @@
 {
   "expo": {
-    "name": "Ýolbelet",
+    "name": "Yolbelet",
     "slug": "yolbelet-app",
-    "version": "1.0.7",
+    "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
-    "ios": {
-      "bundleIdentifier": "com.menli.yolbelet",
-      "supportsTablet": true
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
     },
+    "assetBundlePatterns": ["**/*"],
+    "ios": { "supportsTablet": true },
     "android": {
-      "package": "com.menli.yolbelet",
-      "config": {
-        "googleMaps": {
-          "apiKey": ""
-        }
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#ffffff"
       },
+      "package": "com.menliasrowa.yolbelet",
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
+        "FOREGROUND_SERVICE",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
         "SEND_SMS"
       ]
-    },
-    "plugins": [
-      [
-        "expo-location",
-        {
-          "locationAlwaysPermission": "GPS rugsady gerek."
-        }
-      ]
-    ],
-    "extra": {
-      "eas": {
-        "projectId": null
-      }
     }
   }
 }
