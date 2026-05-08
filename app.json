@@ -2,7 +2,7 @@
   "expo": {
     "name": "Yolbelet",
     "slug": "yolbelet-app",
-    "version": "1.0.0",
+    "version": "1.0.8",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -18,7 +18,7 @@
         "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.menliasrowa.yolbelet",
+      "package": "com/menliasyrowa91-a11y/yolbelet-app",
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
