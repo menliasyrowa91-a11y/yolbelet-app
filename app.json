@@ -12,13 +12,12 @@
       "backgroundColor": "#ffffff"
     },
     "assetBundlePatterns": ["**/*"],
-    "ios": { "supportsTablet": true },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com/menliasyrowa91-a11y/yolbelet-app",
+      "package": "com.menliasyrowa.yolbelet",
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
@@ -26,7 +25,10 @@
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE",
         "SEND_SMS"
-      ]
+      ],
+      "config": {
+        "googleMaps": {}
+      }
     }
   }
 }
