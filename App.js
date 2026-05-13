@@ -1,152 +1,235 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Alert, Share, ActivityIndicator, ScrollView, Linking } from 'react-native';
-import MapView, { Marker, UrlTile, PROVIDER_GOOGLE } from 'react-native-maps';
+import {
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+  Alert,
+  ActivityIndicator,
+  ScrollView,
+  Linking
+} from 'react-native';
+
 import * as Location from 'expo-location';
 import * as SMS from 'expo-sms';
-import * as FileSystem from 'expo-file-system';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function App() {
   const [status, setStatus] = useState("Ulanmaga taýýar");
   const [loading, setLoading] = useState(false);
   const [savedLocation, setSavedLocation] = useState(null);
-  const [storageNote, setStorageNote] = useState("");
 
+  // -------------------------
+  // LOAD SAVED LOCATION
+  // -------------------------
   useEffect(() => {
-    checkMemory();
+    loadSavedLocation();
   }, []);
 
-  const checkMemory = async () => {
+  const loadSavedLocation = async () => {
     try {
-      const free = await FileSystem.getFreeDiskStorageAsync();
-      const mb = Math.round(free / (1024 * 1024));
-      const days = mb > 100 ? "3-4 hepde" : "1 hepde";
-      setStorageNote(`Ýat: ${mb}MB boş. Karta keşleri ${days} saklanar.`);
+      const data = await AsyncStorage.getItem('savedLocation');
+      if (data) {
+        setSavedLocation(JSON.parse(data));
+      }
     } catch (e) {
-      setStorageNote("Ýat maglumaty alynmady.");
+      console.log(e);
     }
   };
 
+  const storeLocation = async (coords) => {
+    try {
+      await AsyncStorage.setItem('savedLocation', JSON.stringify(coords));
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
+  // -------------------------
+  // SHARE LOCATION
+  // -------------------------
   const shareLocation = async () => {
     setLoading(true);
     setStatus("Ýerleşýän ýeriňiz anyklanýar...");
+
     try {
-      let { status: perm } = await Location.requestForegroundPermissionsAsync();
-      if (perm !== 'granted') {
-        Alert.alert("Rugsat ýok", "GPS rugsady berilmese ýerňizi anyklap bolmaýar.");
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert("Rugsat ýok", "GPS rugsady gerek");
+        setLoading(false);
         return;
       }
 
-      // "High" ýerine "Balanced" ulanmak has çalt we durnukly netije berýär
-      let location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      let location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+
       const { latitude, longitude } = location.coords;
-      
-      const mapUrl = `https://Maps.google.com/?q=${latitude},${longitude}`;
-      const messageBody = "YOLBELET: Menin yerim: " + mapUrl;
+
+      const mapUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
+      const messageBody = "YOLBELET: Meniň ýerim: " + mapUrl;
 
       const isAvailable = await SMS.isAvailableAsync();
+
       if (isAvailable) {
-        await SMS.sendSMSAsync([], messageBody); 
-        setStatus("SMS taýýarlandy");
+        await SMS.sendSMSAsync([], messageBody);
+        setStatus("SMS taýýar");
       } else {
-        await Share.share({ message: messageBody });
+        await Linking.openURL(mapUrl);
         setStatus("Paýlaşyldy");
       }
-    } catch (error) {
-      Alert.alert("GPS Hatasy", "Ýerleşýän ýeriňizi anyklap bolmady. GPS-iňiz açykmy?");
+
+    } catch (e) {
+      Alert.alert("Hata", "GPS okalmady");
     } finally {
       setLoading(false);
     }
   };
 
+  // -------------------------
+  // SAVE POINT A
+  // -------------------------
   const savePointA = async () => {
     setLoading(true);
+    setStatus("Nokat saklanylýar...");
+
     try {
-      let loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-      setSavedLocation(loc.coords);
-      Alert.alert("Üstünlikli", "A nokady (başlangyç) ýatda saklandy!");
-      setStatus("A nokady saklandy");
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert("Hata", "GPS rugsady gerek");
+        setLoading(false);
+        return;
+      }
+
+      let location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+
+      setSavedLocation(location.coords);
+      await storeLocation(location.coords);
+
+      Alert.alert("OK", "A nokat saklandy");
+      setStatus("A nokat saklandy");
+
     } catch (e) {
-      Alert.alert("Hata", "Nokady saklap bolmady.");
-    } finally { setLoading(false); }
+      Alert.alert("Hata", "Saklap bolmady");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // -------------------------
+  // GO BACK ROUTE
+  // -------------------------
+  const goToSavedPoint = async () => {
+    if (!savedLocation) {
+      Alert.alert("Nokat ýok", "Ilki sakla");
+      return;
+    }
+
+    setLoading(true);
+    setStatus("Ýol açylýar...");
+
+    try {
+      let current = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+
+      const url =
+        `https://www.google.com/maps/dir/?api=1&origin=` +
+        `${current.coords.latitude},${current.coords.longitude}` +
+        `&destination=${savedLocation.latitude},${savedLocation.longitude}`;
+
+      await Linking.openURL(url);
+      setStatus("Karta açyldy");
+
+    } catch (e) {
+      Alert.alert("Hata", "Ýol tapylmady");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <View style={styles.container}>
-      <MapView
-        style={styles.map}
-        provider={PROVIDER_GOOGLE} 
-        initialRegion={{
-          latitude: 37.95,
-          longitude: 58.38,
-          latitudeDelta: 0.1,
-          longitudeDelta: 0.1,
-        }}
-        showsUserLocation={true}
-        showsMyLocationButton={true}
+    <ScrollView contentContainerStyle={styles.container}>
+
+      <View style={styles.header}>
+        <Text style={styles.title}>📍 ÝOLBELET</Text>
+        <Text style={styles.subtitle}>Seniň ynamdar kömekçiň</Text>
+
+        {/* SEN AÝTAN DÜZÜJI ÝAZGY ÖÇÜRILENOK */}
+        <Text style={styles.creator}>
+          Düzüji: Meñli Aşyrowa Altyýewna
+        </Text>
+      </View>
+
+      <Text style={styles.status}>{status}</Text>
+
+      {loading && <ActivityIndicator size="large" color="red" />}
+
+      <TouchableOpacity style={styles.btn} onPress={shareLocation}>
+        <Text style={styles.btnText}>📍 ÝERIMI UGRAT</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={[styles.btn, { backgroundColor: '#1d3557' }]} onPress={savePointA}>
+        <Text style={styles.btnText}>💾 NOKADY SAKLA</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles.btn, { backgroundColor: savedLocation ? '#457b9d' : '#ccc' }]}
+        onPress={goToSavedPoint}
+        disabled={!savedLocation}
       >
-        <UrlTile 
-          urlTemplate="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-          maximumZ={19}
-        />
-        {savedLocation && <Marker coordinate={savedLocation} title="A Nokady" pinColor="blue" />}
-      </MapView>
+        <Text style={styles.btnText}>🔙 YZYNA ÝOL GÖRKEZ</Text>
+      </TouchableOpacity>
 
-      <ScrollView style={styles.content}>
-        <Text style={styles.logo}>📍 ÝOLBELET</Text>
-        <Text style={styles.memoryText}>{storageNote}</Text>
-
-        <View style={styles.helpCard}>
-          <Text style={styles.helpTitle}>Maglumat:</Text>
-          <Text style={styles.helpTxt}>• Ýerimi ugrat: GPS koordinatyňyzy paýlaşar.</Text>
-          <Text style={styles.helpTxt}>• Nokady sakla: Häzirki ýeriňizi "A nokady" hökmünde ýatda saklar.</Text>
-        </View>
-
-        {loading ? (
-          <ActivityIndicator size="large" color="#e63946" />
-        ) : (
-          <View style={{gap: 10}}>
-            <TouchableOpacity style={styles.btnRed} onPress={shareLocation}>
-              <Text style={styles.btnText}>📍 ÝERIMI UGRAT</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.btnDark} onPress={savePointA}>
-              <Text style={styles.btnText}>💾 NOKADY ÝATDA SAKLA</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={[styles.btnBlue, {opacity: savedLocation ? 1 : 0.5}]}
-              onPress={() => {
-                if(savedLocation) {
-                  const url = `https://Maps.google.com/?q=${savedLocation.latitude},${savedLocation.longitude}`;
-                  Linking.openURL(url);
-                }
-              }}
-              disabled={!savedLocation}
-            >
-              <Text style={styles.btnText}>🔙 YZYNA ÝOL GÖRKEZ</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-        <Text style={styles.status}>{status}</Text>
-        <Text style={styles.footer}>© 2026 Düzüji: Meňli Aşyrowa</Text>
-      </ScrollView>
-    </View>
+    </ScrollView>
   );
 }
 
+// -------------------------
+// STYLES
+// -------------------------
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8f9fa' },
-  map: { height: '40%', width: '100%' },
-  content: { padding: 20 },
-  logo: { fontSize: 28, fontWeight: 'bold', color: '#1d3557', textAlign: 'center' },
-  memoryText: { fontSize: 10, color: '#666', textAlign: 'center', marginBottom: 15 },
-  helpCard: { backgroundColor: '#fff', padding: 15, borderRadius: 12, marginBottom: 20, elevation: 3 },
-  helpTitle: { fontWeight: 'bold', marginBottom: 5, color: '#1d3557' },
-  helpTxt: { fontSize: 12, color: '#444', marginBottom: 3 },
-  btnRed: { backgroundColor: '#e63946', padding: 18, borderRadius: 12, alignItems: 'center' },
-  btnDark: { backgroundColor: '#1d3557', padding: 18, borderRadius: 12, alignItems: 'center' },
-  btnBlue: { backgroundColor: '#457b9d', padding: 18, borderRadius: 12, alignItems: 'center' },
-  btnText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
-  status: { textAlign: 'center', marginTop: 10, color: '#457b9d' },
-  footer: { textAlign: 'center', marginTop: 20, fontSize: 10, color: '#aaa' }
+  container: {
+    padding: 20,
+    paddingTop: 60,
+    alignItems: 'center'
+  },
+  header: {
+    marginBottom: 25,
+    alignItems: 'center'
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#1d3557'
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#457b9d',
+    marginTop: 5
+  },
+  creator: {
+    fontSize: 12,
+    color: '#888',
+    marginTop: 8,
+    fontStyle: 'italic'
+  },
+  status: {
+    marginBottom: 20,
+    color: '#457b9d'
+  },
+  btn: {
+    backgroundColor: '#e63946',
+    padding: 18,
+    width: '100%',
+    borderRadius: 10,
+    marginBottom: 15,
+    alignItems: 'center'
+  },
+  btnText: {
+    color: 'white',
+    fontWeight: 'bold'
+  }
 });
