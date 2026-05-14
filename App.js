@@ -19,9 +19,6 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [savedLocation, setSavedLocation] = useState(null);
 
-  // -------------------------
-  // LOAD SAVED LOCATION
-  // -------------------------
   useEffect(() => {
     loadSavedLocation();
   }, []);
@@ -45,16 +42,14 @@ export default function App() {
     }
   };
 
-  // -------------------------
-  // SHARE LOCATION
-  // -------------------------
+  // SMS ugratmak - TAKYK SENIŇ FORMATYŇDA
   const shareLocation = async () => {
     setLoading(true);
     setStatus("Ýerleşýän ýeriňiz anyklanýar...");
 
     try {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
+      let { status: permStatus } = await Location.requestForegroundPermissionsAsync();
+      if (permStatus !== 'granted') {
         Alert.alert("Rugsat ýok", "GPS rugsady gerek");
         setLoading(false);
         return;
@@ -66,16 +61,20 @@ export default function App() {
 
       const { latitude, longitude } = location.coords;
 
-      const mapUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
-      const messageBody = "YOLBELET: Meniň ýerim: " + mapUrl;
+      // Öňünde https:// ýok, diňe seniň ulanýan formatyň
+      const mapUrl = `Maps.google.com/?q=${latitude},${longitude}`;
+      const messageBody = "YOLBELET: Menin yerim: " + mapUrl;
 
       const isAvailable = await SMS.isAvailableAsync();
 
       if (isAvailable) {
+        // Bu ýerde takyk seniň isleýän SMS formatyň ugradylýar
         await SMS.sendSMSAsync([], messageBody);
         setStatus("SMS taýýar");
       } else {
-        await Linking.openURL(mapUrl);
+        // SMS elýeterli däl bolsa, ulanmaga mejbur bolan ýagdaýynda brauzer linki
+        const fallbackUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
+        await Linking.openURL(fallbackUrl);
         setStatus("Paýlaşyldy");
       }
 
@@ -86,16 +85,13 @@ export default function App() {
     }
   };
 
-  // -------------------------
-  // SAVE POINT A
-  // -------------------------
   const savePointA = async () => {
     setLoading(true);
     setStatus("Nokat saklanylýar...");
 
     try {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
+      let { status: permStatus } = await Location.requestForegroundPermissionsAsync();
+      if (permStatus !== 'granted') {
         Alert.alert("Hata", "GPS rugsady gerek");
         setLoading(false);
         return;
@@ -118,9 +114,6 @@ export default function App() {
     }
   };
 
-  // -------------------------
-  // GO BACK ROUTE
-  // -------------------------
   const goToSavedPoint = async () => {
     if (!savedLocation) {
       Alert.alert("Nokat ýok", "Ilki sakla");
@@ -157,7 +150,6 @@ export default function App() {
         <Text style={styles.title}>📍 ÝOLBELET</Text>
         <Text style={styles.subtitle}>Seniň ynamdar kömekçiň</Text>
 
-        {/* SEN AÝTAN DÜZÜJI ÝAZGY ÖÇÜRILENOK */}
         <Text style={styles.creator}>
           Düzüji: Meñli Aşyrowa Altyýewna
         </Text>
@@ -165,7 +157,7 @@ export default function App() {
 
       <Text style={styles.status}>{status}</Text>
 
-      {loading && <ActivityIndicator size="large" color="red" />}
+      {loading && <ActivityIndicator size="large" color="#e63946" />}
 
       <TouchableOpacity style={styles.btn} onPress={shareLocation}>
         <Text style={styles.btnText}>📍 ÝERIMI UGRAT</Text>
@@ -187,14 +179,12 @@ export default function App() {
   );
 }
 
-// -------------------------
-// STYLES
-// -------------------------
 const styles = StyleSheet.create({
   container: {
     padding: 20,
     paddingTop: 60,
-    alignItems: 'center'
+    alignItems: 'center',
+    backgroundColor: '#f8f9fa'
   },
   header: {
     marginBottom: 25,
@@ -230,6 +220,7 @@ const styles = StyleSheet.create({
   },
   btnText: {
     color: 'white',
-    fontWeight: 'bold'
+    fontWeight: 'bold',
+    fontSize: 16
   }
 });
